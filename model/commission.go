@@ -64,8 +64,10 @@ func SettleInviterCommission(inviteeId int, quota int) (int, error) {
 	if rate > 1 {
 		rate = 1
 	}
-	// 用十进制计算避免浮点误差把 100*0.29 算成 28。
+	// 用十进制计算避免浮点误差把 100*0.29 算成 28。MySQL 的 float 列是单精度，
+	// 读回的 0.29 可能是 0.28999999…，先按 6 位小数取整，去掉存储带来的噪声。
 	commission := decimal.NewFromFloat(rate).
+		Round(6).
 		Mul(decimal.NewFromInt(int64(quota))).
 		Floor().
 		IntPart()

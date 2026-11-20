@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/logger"
 	"github.com/mazihua-lgtm/relay-forge/model"
 	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
+	"github.com/gin-gonic/gin"
 )
 
 const (

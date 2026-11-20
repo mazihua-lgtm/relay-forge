@@ -11,24 +11,35 @@ import (
 	gormlogger "gorm.io/gorm/logger"
 )
 
-// EarningsCostRatio is the charge-to-cost multiplier used to estimate the
-// upstream cost of a request whose real cost the log table does not record.
-// new-api bills a request at roughly 1.2x what the upstream channel charges,
-// so a request billed as quota Q is assumed to cost Q/1.2 upstream. When the
-// deployment stores the real figure in a cost_quota column, that sum is used
-// instead and this constant only describes what the estimate would have been.
-const EarningsCostRatio = 1.2
+// The default billing multiplier is about 1.2x the upstream price, so a request
+// charged Q quota is estimated to have cost Q / 1.2 = Q x 5/6 upstream. The
+// ratio is a fraction so the estimate is exact integer arithmetic: aggregated
+// quota sums outgrow the int32 range common.QuotaRound saturates at, and that
+// helper is meant for single-request charges.
+const (
+	earningsCostRatioNumerator   = 6
+	earningsCostRatioDenominator = 5
 
-// Earnings page sizes. The grouped earnings endpoints never return an
-// unbounded list: an operator with thousands of channels or models pages
-// through them instead of scanning the whole log table into memory.
+	// EarningsCostRatio is the charge-to-cost multiplier behind EstimateUpstreamCost.
+	EarningsCostRatio = float64(earningsCostRatioNumerator) / earningsCostRatioDenominator
+)
+
+// Page sizes of the grouped earnings reports. They never return an unbounded
+// list: an operator with thousands of channels or models pages through them.
 const (
 	EarningsDefaultLimit = 100
 	EarningsMaxLimit     = 500
 )
 
+// EstimateUpstreamCost estimates what chargedQuota cost upstream when the log
+// table does not record the real figure: chargedQuota / EarningsCostRatio,
+// rounded half up.
+func EstimateUpstreamCost(chargedQuota int64) int64 {
+	return (chargedQuota*earningsCostRatioDenominator + earningsCostRatioNumerator/2) / earningsCostRatioNumerator
+}
+
 // EarningsFilter is the time window of an earnings query. Both bounds are
-// inclusive unix timestamps; a zero start means "no lower bound".
+// inclusive unix timestamps.
 type EarningsFilter struct {
 	StartTimestamp int64
 	EndTimestamp   int64
@@ -36,48 +47,47 @@ type EarningsFilter struct {
 
 // EarningsOverview holds the aggregate sums of one log window. Revenue is the
 // gross quota charged to users and Refund the quota given back, so net revenue
-// is Revenue - Refund. CostQuota is populated only when the log table records
-// it (see LogsRecordCostQuota); otherwise it stays zero and callers estimate.
+// is Revenue - Refund. CostQuota is the recorded upstream cost; it is filled
+// only when the log table records it (see LogsRecordCostQuota) and stays zero
+// otherwise, in which case callers estimate with EstimateUpstreamCost.
 type EarningsOverview struct {
-	Revenue      int64 `gorm:"column:revenue" json:"revenue"`
-	Refund       int64 `gorm:"column:refund" json:"refund"`
-	CostQuota    int64 `gorm:"column:cost_quota" json:"cost_quota"`
-	RequestCount int64 `gorm:"column:request_count" json:"request_count"`
+	Revenue      int64 `gorm:"column:revenue"`
+	Refund       int64 `gorm:"column:refund"`
+	CostQuota    int64 `gorm:"column:recorded_cost"`
+	RequestCount int64 `gorm:"column:request_count"`
 }
 
 // EarningsChannel is one channel's row of the by-channel earnings report.
 type EarningsChannel struct {
-	ChannelId    int   `gorm:"column:channel_id" json:"channel_id"`
-	Revenue      int64 `gorm:"column:revenue" json:"revenue"`
-	Refund       int64 `gorm:"column:refund" json:"refund"`
-	CostQuota    int64 `gorm:"column:cost_quota" json:"cost_quota"`
-	RequestCount int64 `gorm:"column:request_count" json:"request_count"`
+	ChannelId    int   `gorm:"column:channel_id"`
+	Revenue      int64 `gorm:"column:revenue"`
+	Refund       int64 `gorm:"column:refund"`
+	CostQuota    int64 `gorm:"column:recorded_cost"`
+	RequestCount int64 `gorm:"column:request_count"`
 }
 
 // EarningsModel is one model's row of the by-model earnings report.
 type EarningsModel struct {
-	ModelName    string `gorm:"column:model_name" json:"model_name"`
-	Revenue      int64  `gorm:"column:revenue" json:"revenue"`
-	Refund       int64  `gorm:"column:refund" json:"refund"`
-	CostQuota    int64  `gorm:"column:cost_quota" json:"cost_quota"`
-	RequestCount int64  `gorm:"column:request_count" json:"request_count"`
+	ModelName    string `gorm:"column:model_name"`
+	Revenue      int64  `gorm:"column:revenue"`
+	Refund       int64  `gorm:"column:refund"`
+	CostQuota    int64  `gorm:"column:recorded_cost"`
+	RequestCount int64  `gorm:"column:request_count"`
 }
 
-// earningsLogQuery builds the consume/refund window both reports aggregate over.
-// Top-ups, management and error logs are money that never moved through an
-// upstream channel, so they are excluded by type rather than by quota.
-func earningsLogQuery(filter EarningsFilter) (*gorm.DB, error) {
-	if LOG_DB == nil {
-		return nil, common.NewMessage("Log database is not initialized")
-	}
-	return LOG_DB.Table("logs").
+// earningsLogQuery selects the consume and refund logs of the window. Top-ups,
+// management and error logs never moved money through an upstream channel, so
+// they are excluded by type rather than by quota.
+func earningsLogQuery(filter EarningsFilter) *gorm.DB {
+	return LOG_DB.Model(&Log{}).
 		Where("type IN ?", []int{LogTypeConsume, LogTypeRefund}).
-		Where("created_at >= ? AND created_at <= ?", filter.StartTimestamp, filter.EndTimestamp), nil
+		Where("created_at >= ? AND created_at <= ?", filter.StartTimestamp, filter.EndTimestamp)
 }
 
 // earningsSelectExpressions returns the aggregate select list and its bind
-// arguments. cost_quota is only summed when the table has the column, so the
-// same code runs on stock new-api schemas.
+// arguments. The recorded cost is only summed when the table has the column, so
+// the same code runs on stock schemas. Its alias differs from the column name
+// because ClickHouse resolves an alias inside the aggregate that defines it.
 func earningsSelectExpressions() (string, []any) {
 	expressions := []string{
 		"COALESCE(SUM(CASE WHEN type = ? THEN quota ELSE 0 END), 0) AS revenue",
@@ -87,7 +97,7 @@ func earningsSelectExpressions() (string, []any) {
 	args := []any{LogTypeConsume, LogTypeRefund, LogTypeConsume}
 	if LogsRecordCostQuota() {
 		expressions = append(expressions,
-			"COALESCE(SUM(CASE WHEN type = ? THEN cost_quota ELSE 0 END), 0) AS cost_quota")
+			"COALESCE(SUM(CASE WHEN type = ? THEN cost_quota ELSE 0 END), 0) AS recorded_cost")
 		args = append(args, LogTypeConsume)
 	}
 	return strings.Join(expressions, ", "), args
@@ -95,96 +105,57 @@ func earningsSelectExpressions() (string, []any) {
 
 func earningsQueryFailed(operation string, err error) error {
 	common.SysError(common.LogText("failed to query %s: %s", operation, err.Error()))
-	return common.NewMessage("Failed to query earnings")
+	return common.NewMessage("Failed to query statistics")
 }
 
 // GetEarningsOverview sums revenue, refunds, cost and request count over the
 // window in a single pass.
 func GetEarningsOverview(filter EarningsFilter) (EarningsOverview, error) {
 	var overview EarningsOverview
-	tx, err := earningsLogQuery(filter)
-	if err != nil {
-		return overview, err
-	}
 	selects, args := earningsSelectExpressions()
-	if err := tx.Select(selects, args...).Scan(&overview).Error; err != nil {
+	if err := earningsLogQuery(filter).Select(selects, args...).Scan(&overview).Error; err != nil {
 		return overview, earningsQueryFailed("earnings overview", err)
 	}
 	return overview, nil
 }
 
-// GetEarningsByChannel groups the window by channel, largest revenue first.
-// The returned total counts groups, so a caller can page through the report.
+// GetEarningsByChannel groups the window by channel, largest revenue first. The
+// returned total counts channels, so a caller can page through the report.
 func GetEarningsByChannel(filter EarningsFilter, limit int, offset int) ([]EarningsChannel, int64, error) {
-	rows := make([]EarningsChannel, 0)
-	limit, offset = normalizeEarningsPage(limit, offset)
-	tx, err := earningsLogQuery(filter)
-	if err != nil {
-		return rows, 0, err
-	}
-	selects, args := earningsSelectExpressions()
-	if err := tx.Select(selects+", channel_id AS channel_id", args...).
-		Group("channel_id").
-		Order("revenue DESC, channel_id ASC").
-		Limit(limit).
-		Offset(offset).
-		Scan(&rows).Error; err != nil {
-		return rows, 0, earningsQueryFailed("earnings by channel", err)
-	}
-	total, err := earningsGroupCount(filter, "channel_id")
-	if err != nil {
-		return rows, 0, err
-	}
-	return rows, total, nil
+	return getEarningsGroups[EarningsChannel](filter, "channel_id", limit, offset)
 }
 
 // GetEarningsByModel groups the window by model name, largest revenue first.
 func GetEarningsByModel(filter EarningsFilter, limit int, offset int) ([]EarningsModel, int64, error) {
-	rows := make([]EarningsModel, 0)
-	limit, offset = normalizeEarningsPage(limit, offset)
-	tx, err := earningsLogQuery(filter)
-	if err != nil {
-		return rows, 0, err
-	}
-	selects, args := earningsSelectExpressions()
-	if err := tx.Select(selects+", model_name AS model_name", args...).
-		Group("model_name").
-		Order("revenue DESC, model_name ASC").
-		Limit(limit).
-		Offset(offset).
-		Scan(&rows).Error; err != nil {
-		return rows, 0, earningsQueryFailed("earnings by model", err)
-	}
-	total, err := earningsGroupCount(filter, "model_name")
-	if err != nil {
-		return rows, 0, err
-	}
-	return rows, total, nil
+	return getEarningsGroups[EarningsModel](filter, "model_name", limit, offset)
 }
 
-func earningsGroupCount(filter EarningsFilter, column string) (int64, error) {
-	tx, err := earningsLogQuery(filter)
-	if err != nil {
-		return 0, err
-	}
-	var total int64
-	if err := tx.Select("COUNT(DISTINCT " + column + ")").Scan(&total).Error; err != nil {
-		return 0, earningsQueryFailed("earnings group count", err)
-	}
-	return total, nil
-}
-
-func normalizeEarningsPage(limit int, offset int) (int, int) {
+// getEarningsGroups aggregates the window per value of column and counts the
+// groups. column is a constant chosen by the exported wrappers, never request
+// input, so it is safe to put in the SQL text.
+func getEarningsGroups[T any](filter EarningsFilter, column string, limit int, offset int) ([]T, int64, error) {
 	if limit <= 0 {
 		limit = EarningsDefaultLimit
 	}
-	if limit > EarningsMaxLimit {
-		limit = EarningsMaxLimit
+	limit = min(limit, EarningsMaxLimit)
+	offset = max(offset, 0)
+
+	selects, args := earningsSelectExpressions()
+	rows := make([]T, 0)
+	if err := earningsLogQuery(filter).
+		Select(selects+", "+column, args...).
+		Group(column).
+		Order("revenue DESC, " + column + " ASC").
+		Limit(limit).
+		Offset(offset).
+		Scan(&rows).Error; err != nil {
+		return nil, 0, earningsQueryFailed("earnings by "+column, err)
 	}
-	if offset < 0 {
-		offset = 0
+	var total int64
+	if err := earningsLogQuery(filter).Select("COUNT(DISTINCT " + column + ")").Scan(&total).Error; err != nil {
+		return nil, 0, earningsQueryFailed("earnings group count", err)
 	}
-	return limit, offset
+	return rows, total, nil
 }
 
 var (
@@ -194,42 +165,38 @@ var (
 )
 
 // LogsRecordCostQuota reports whether the log table stores each request's real
-// upstream cost in a cost_quota column. The stock new-api schema does not, so
-// this is normally false and earnings estimates cost from quota. The probe runs
-// once per log database handle, which keeps a later schema migration from
-// requiring a code change.
+// upstream cost in a cost_quota column. The stock schema does not, so this is
+// normally false and earnings estimate the cost from quota. A definitive answer
+// is remembered per log database handle, which lets a later schema change take
+// effect without a code change; a failed probe (for example a dropped
+// connection) is not remembered and is retried on the next call.
 func LogsRecordCostQuota() bool {
 	db := LOG_DB
-	if db == nil {
-		return false
-	}
 	earningsCostProbeMu.Lock()
 	defer earningsCostProbeMu.Unlock()
 	if earningsCostProbeDB == db {
 		return earningsCostRecorded
 	}
-	earningsCostRecorded = probeLogCostQuota(db)
-	earningsCostProbeDB = db
-	return earningsCostRecorded
-}
 
-func probeLogCostQuota(db *gorm.DB) bool {
 	// A missing column is the expected answer, so keep gorm from logging the
-	// probe's SQL error on every process start.
+	// probe's SQL error.
 	silent := db.Session(&gorm.Session{Logger: db.Logger.LogMode(gormlogger.Silent)})
 	var row struct {
 		CostQuota sql.NullInt64 `gorm:"column:cost_quota"`
 	}
-	return silent.Table("logs").Select("cost_quota").Limit(1).Scan(&row).Error == nil
+	err := silent.Model(&Log{}).Select("cost_quota").Limit(1).Scan(&row).Error
+	if err != nil && !strings.Contains(strings.ToLower(err.Error()), "cost_quota") {
+		return false
+	}
+	earningsCostProbeDB = db
+	earningsCostRecorded = err == nil
+	return earningsCostRecorded
 }
 
 // GetChannelNameMap resolves channel ids to display names for the earnings
 // report. It is best effort: a channel that was deleted simply has no name.
 func GetChannelNameMap(ids []int) map[int]string {
 	names := make(map[int]string, len(ids))
-	if len(ids) == 0 {
-		return names
-	}
 	pending := make([]int, 0, len(ids))
 	for _, id := range ids {
 		if id <= 0 {
@@ -243,7 +210,7 @@ func GetChannelNameMap(ids []int) map[int]string {
 		}
 		pending = append(pending, id)
 	}
-	if len(pending) == 0 || DB == nil {
+	if len(pending) == 0 {
 		return names
 	}
 	var rows []struct {

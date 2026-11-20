@@ -868,6 +868,13 @@ func handlerMultiKeyUpdate(channel *Channel, usingKey string, status int, reason
 	}
 }
 
+// isAutomaticDisableStatus reports a status an automatic process, a failed
+// request or the health probe, sets to take a channel out of rotation. Unlike a
+// manual disable it never replaces one.
+func isAutomaticDisableStatus(status int) bool {
+	return status == common.ChannelStatusAutoDisabled || status == common.ChannelStatusDegraded
+}
+
 func hasEnabledMultiKey(keys []string, statusList map[int]int) bool {
 	for i := range keys {
 		if statusList == nil {
@@ -913,7 +920,7 @@ func UpdateChannelStatus(channelId int, usingKey string, status int, reason stri
 		}
 		// A request failure must not replace an admin's manual disable;
 		// otherwise automatic recovery could re-enable the channel later.
-		if status == common.ChannelStatusAutoDisabled && channelCache.Status == common.ChannelStatusManuallyDisabled {
+		if isAutomaticDisableStatus(status) && channelCache.Status == common.ChannelStatusManuallyDisabled {
 			return false
 		}
 		if channelCache.ChannelInfo.IsMultiKey {
@@ -948,7 +955,7 @@ func UpdateChannelStatus(channelId int, usingKey string, status int, reason stri
 	written, err := UpdateChannelOtherInfo(channelId, func(channel *Channel) (map[string]any, error) {
 		shouldUpdateAbilities = false
 		// Check the stored row too, since this node's cache may be stale.
-		if status == common.ChannelStatusAutoDisabled && channel.Status == common.ChannelStatusManuallyDisabled {
+		if isAutomaticDisableStatus(status) && channel.Status == common.ChannelStatusManuallyDisabled {
 			return nil, nil
 		}
 		// The master runs a plugin's scheduled hook when a key is disabled

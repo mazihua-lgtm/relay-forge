@@ -1,7 +1,12 @@
 package service
 
 import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
@@ -101,6 +106,9 @@ func TestHealthProbeProtocolForChannel(t *testing.T) {
 		constant.ChannelTypeMidjourney,
 		constant.ChannelTypeCodex,
 		constant.ChannelTypeAdvancedCustom,
+		constant.ChannelTypeVLLM,
+		constant.ChannelTypeSGLang,
+		constant.ChannelTypeTaskPlugin,
 	} {
 		_, ok := healthProbeProtocolForChannel(channelType)
 		assert.False(t, ok, "channel type %d must not be probed", channelType)
@@ -146,11 +154,296 @@ func TestHealthProbeModelForChannel(t *testing.T) {
 	assert.False(t, ok, "an embedding-only channel has no model to probe")
 }
 
-func TestHealthProbeCredentials(t *testing.T) {
+func TestHealthProbeMappedModel(t *testing.T) {
 	t.Parallel()
 
-	assert.Equal(t, common.ChannelStatusDegraded, 4)
+	assert.Equal(t, "gpt-4o-mini", healthProbeMappedModel("", "gpt-4o-mini"))
+	assert.Equal(t, "gpt-4o-mini", healthProbeMappedModel("{}", "gpt-4o-mini"))
+	assert.Equal(t, "gpt-4o-mini-2024-07-18",
+		healthProbeMappedModel(`{"gpt-4o-mini":"gpt-4o-mini-2024-07-18"}`, "gpt-4o-mini"))
+	assert.Equal(t, "c", healthProbeMappedModel(`{"a":"b","b":"c"}`, "a"), "a chain is followed to its end")
+	assert.Equal(t, "a", healthProbeMappedModel(`{"a":"b","b":"a"}`, "a"), "a loop keeps the listed name")
+	assert.Equal(t, "a", healthProbeMappedModel(`{"a":"a"}`, "a"))
+	assert.Equal(t, "a", healthProbeMappedModel(`{"a":""}`, "a"))
+	assert.Equal(t, "a", healthProbeMappedModel(`{"other":"x"}`, "a"))
+	assert.Equal(t, "a", healthProbeMappedModel(`not json`, "a"))
+}
+
+func TestHealthProbeIsPlainAPIKey(t *testing.T) {
+	t.Parallel()
+
+	assert.True(t, healthProbeIsPlainAPIKey("sk-abc123"))
+	assert.True(t, healthProbeIsPlainAPIKey("sk-ant-api03-xyz"))
+	assert.False(t, healthProbeIsPlainAPIKey(""))
+	assert.False(t, healthProbeIsPlainAPIKey(`{"type":"service_account"}`))
+	assert.False(t, healthProbeIsPlainAPIKey(`["sk-a","sk-b"]`))
+	assert.False(t, healthProbeIsPlainAPIKey(`"sk-quoted"`))
+}
+
+func TestHealthProbeRouteNameHidesCredentials(t *testing.T) {
+	t.Parallel()
+
+	assert.Equal(t, "the direct route", healthProbeRouteName(""))
+	name := healthProbeRouteName("http://user:secret@127.0.0.1:1082")
+	assert.Equal(t, "proxy 127.0.0.1:1082", name)
+	assert.NotContains(t, name, "secret")
+	assert.Equal(t, "a channel proxy", healthProbeRouteName("::not a url"))
+}
+
+func TestHealthProbeVerdictStrings(t *testing.T) {
+	t.Parallel()
+
+	assert.Equal(t, 4, common.ChannelStatusDegraded)
 	assert.Equal(t, "healthy", healthProbeVerdictHealthy.String())
 	assert.Equal(t, "degraded", healthProbeVerdictDegraded.String())
 	assert.Equal(t, "failed", healthProbeVerdictFailed.String())
+}
+
+func healthProbeSilentResult(proxyURL string) healthProbeAccountResult {
+	return healthProbeAccountResult{
+		proxyURL: proxyURL,
+		outcome:  healthProbeOutcome{verdict: healthProbeVerdictFailed, noResponse: true},
+	}
+}
+
+func healthProbeAnsweredResult(proxyURL string, verdict healthProbeVerdict) healthProbeAccountResult {
+	return healthProbeAccountResult{
+		proxyURL: proxyURL,
+		outcome:  healthProbeOutcome{verdict: verdict},
+	}
+}
+
+func TestHealthProbeUnreachableProxies(t *testing.T) {
+	t.Parallel()
+
+	t.Run("silence from enough accounts is an outage", func(t *testing.T) {
+		t.Parallel()
+		results := []healthProbeAccountResult{
+			healthProbeSilentResult(""), healthProbeSilentResult(""), healthProbeSilentResult(""),
+		}
+		assert.Equal(t, map[string]bool{"": true}, healthProbeUnreachableProxies(results))
+	})
+
+	t.Run("too few accounts to tell", func(t *testing.T) {
+		t.Parallel()
+		results := []healthProbeAccountResult{healthProbeSilentResult(""), healthProbeSilentResult("")}
+		assert.Empty(t, healthProbeUnreachableProxies(results))
+	})
+
+	t.Run("one answer proves the route works", func(t *testing.T) {
+		t.Parallel()
+		results := []healthProbeAccountResult{
+			healthProbeSilentResult(""), healthProbeSilentResult(""), healthProbeSilentResult(""),
+			healthProbeAnsweredResult("", healthProbeVerdictFailed),
+		}
+		assert.Empty(t, healthProbeUnreachableProxies(results))
+	})
+
+	t.Run("dead upstreams that still answer are not an outage", func(t *testing.T) {
+		t.Parallel()
+		results := []healthProbeAccountResult{
+			healthProbeAnsweredResult("", healthProbeVerdictFailed),
+			healthProbeAnsweredResult("", healthProbeVerdictFailed),
+			healthProbeAnsweredResult("", healthProbeVerdictFailed),
+		}
+		assert.Empty(t, healthProbeUnreachableProxies(results))
+	})
+
+	t.Run("each proxy is judged on its own", func(t *testing.T) {
+		t.Parallel()
+		const downProxy = "http://127.0.0.1:1082"
+		results := []healthProbeAccountResult{
+			healthProbeSilentResult(downProxy), healthProbeSilentResult(downProxy), healthProbeSilentResult(downProxy),
+			healthProbeAnsweredResult("", healthProbeVerdictHealthy),
+			healthProbeAnsweredResult("", healthProbeVerdictHealthy),
+		}
+		assert.Equal(t, map[string]bool{downProxy: true}, healthProbeUnreachableProxies(results))
+	})
+}
+
+// healthProbeTestContext bounds one probe in a test.
+func healthProbeTestContext(t *testing.T, timeout time.Duration) context.Context {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	t.Cleanup(cancel)
+	return ctx
+}
+
+func TestProbeChannelAccountOpenAIRequestAndHealthyAnswer(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "/v1/chat/completions", r.URL.Path)
+		assert.Equal(t, "Bearer sk-test", r.Header.Get("Authorization"))
+		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+		var body struct {
+			Model     string `json:"model"`
+			MaxTokens int    `json:"max_tokens"`
+			Stream    bool   `json:"stream"`
+			Messages  []struct {
+				Role    string `json:"role"`
+				Content string `json:"content"`
+			} `json:"messages"`
+		}
+		assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, "gpt-4o-mini", body.Model)
+		assert.Equal(t, 5, body.MaxTokens)
+		assert.False(t, body.Stream)
+		if assert.Len(t, body.Messages, 1) {
+			assert.Equal(t, "user", body.Messages[0].Role)
+			assert.Equal(t, "hi", body.Messages[0].Content)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"Hello! How can I help?"}}]}`))
+	}))
+	t.Cleanup(server.Close)
+
+	outcome := probeChannelAccount(healthProbeTestContext(t, 5*time.Second), server.Client(), server.URL,
+		healthProbeProtocolOpenAI, "sk-test", "gpt-4o-mini")
+	assert.Equal(t, healthProbeVerdictHealthy, outcome.verdict, outcome.detail)
+	assert.False(t, outcome.noResponse)
+}
+
+func TestProbeChannelAccountAnthropicRequestAndHealthyAnswer(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/messages", r.URL.Path)
+		assert.Equal(t, "sk-ant-test", r.Header.Get("x-api-key"))
+		assert.Equal(t, healthProbeAnthropicVersion, r.Header.Get("anthropic-version"))
+		assert.Empty(t, r.Header.Get("Authorization"))
+
+		var body struct {
+			Model     string `json:"model"`
+			MaxTokens int    `json:"max_tokens"`
+		}
+		assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, "claude-3-5-haiku-20241022", body.Model)
+		assert.Equal(t, 5, body.MaxTokens)
+
+		_, _ = w.Write([]byte(`{"content":[{"type":"text","text":"Hi!"}]}`))
+	}))
+	t.Cleanup(server.Close)
+
+	outcome := probeChannelAccount(healthProbeTestContext(t, 5*time.Second), server.Client(), server.URL,
+		healthProbeProtocolAnthropic, "sk-ant-test", "claude-3-5-haiku-20241022")
+	assert.Equal(t, healthProbeVerdictHealthy, outcome.verdict, outcome.detail)
+}
+
+func TestProbeChannelAccountClassifiesAnswers(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name        string
+		status      int
+		body        string
+		wantVerdict healthProbeVerdict
+		wantDetail  string
+	}{
+		{"empty content is degraded", http.StatusOK, `{"choices":[{"message":{"content":""}}]}`, healthProbeVerdictDegraded, "empty or evasive"},
+		{"no choices is degraded", http.StatusOK, `{"choices":[]}`, healthProbeVerdictDegraded, "empty or evasive"},
+		{"evasive boilerplate is degraded", http.StatusOK, `{"choices":[{"message":{"content":"I'm sorry, I can't help with that."}}]}`, healthProbeVerdictDegraded, "empty or evasive"},
+		{"unreadable 200 body is degraded", http.StatusOK, `<html>gateway page</html>`, healthProbeVerdictDegraded, "unreadable"},
+		{"401 is failed", http.StatusUnauthorized, `{"error":{"message":"invalid api key"}}`, healthProbeVerdictFailed, "HTTP 401"},
+		{"429 is failed", http.StatusTooManyRequests, `{"error":{"message":"rate limited"}}`, healthProbeVerdictFailed, "HTTP 429"},
+		{"500 is failed", http.StatusInternalServerError, `upstream exploded`, healthProbeVerdictFailed, "HTTP 500"},
+		{"204 is failed", http.StatusNoContent, ``, healthProbeVerdictFailed, "HTTP 204"},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tc.status)
+				_, _ = w.Write([]byte(tc.body))
+			}))
+			t.Cleanup(server.Close)
+
+			outcome := probeChannelAccount(healthProbeTestContext(t, 5*time.Second), server.Client(), server.URL,
+				healthProbeProtocolOpenAI, "sk-test", "gpt-4o-mini")
+			assert.Equal(t, tc.wantVerdict, outcome.verdict, outcome.detail)
+			assert.Contains(t, outcome.detail, tc.wantDetail)
+			assert.False(t, outcome.noResponse, "the upstream did answer")
+		})
+	}
+}
+
+// A hanging upstream must cost one timeout, not the probe goroutine.
+func TestProbeChannelAccountTimeoutDoesNotHang(t *testing.T) {
+	t.Parallel()
+
+	release := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-release
+	}))
+	// Cleanups run last in, first out: the handler is freed before Close waits.
+	t.Cleanup(server.Close)
+	t.Cleanup(func() { close(release) })
+
+	startedAt := time.Now()
+	outcome := probeChannelAccount(healthProbeTestContext(t, 200*time.Millisecond), server.Client(), server.URL,
+		healthProbeProtocolOpenAI, "sk-test", "gpt-4o-mini")
+	elapsed := time.Since(startedAt)
+
+	assert.Equal(t, healthProbeVerdictFailed, outcome.verdict)
+	assert.True(t, outcome.noResponse, "no answer arrived before the deadline")
+	assert.Less(t, elapsed, 3*time.Second, "the probe must give up at its deadline")
+}
+
+// A server that answers headers and then stalls must not hold the body read.
+func TestProbeChannelAccountBodyStallDoesNotHang(t *testing.T) {
+	t.Parallel()
+
+	release := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		if flusher, ok := w.(http.Flusher); ok {
+			flusher.Flush()
+		}
+		<-release
+	}))
+	t.Cleanup(server.Close)
+	t.Cleanup(func() { close(release) })
+
+	startedAt := time.Now()
+	outcome := probeChannelAccount(healthProbeTestContext(t, 200*time.Millisecond), server.Client(), server.URL,
+		healthProbeProtocolOpenAI, "sk-test", "gpt-4o-mini")
+	elapsed := time.Since(startedAt)
+
+	assert.Equal(t, healthProbeVerdictFailed, outcome.verdict)
+	assert.Less(t, elapsed, 3*time.Second, "the body read is bounded by the same deadline")
+}
+
+func TestProbeChannelAccountRefusedConnectionIsSilence(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	closedURL := server.URL
+	server.Close()
+
+	outcome := probeChannelAccount(healthProbeTestContext(t, 5*time.Second), &http.Client{}, closedURL,
+		healthProbeProtocolOpenAI, "sk-test", "gpt-4o-mini")
+	assert.Equal(t, healthProbeVerdictFailed, outcome.verdict)
+	assert.True(t, outcome.noResponse)
+}
+
+func TestProbeChannelAccountNeverReportsTheKey(t *testing.T) {
+	t.Parallel()
+
+	const apiKey = "sk-secret-0123456789"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"error":"Incorrect API key provided: ` + apiKey + `"}`))
+	}))
+	t.Cleanup(server.Close)
+
+	outcome := probeChannelAccount(healthProbeTestContext(t, 5*time.Second), server.Client(), server.URL,
+		healthProbeProtocolOpenAI, apiKey, "gpt-4o-mini")
+	assert.Equal(t, healthProbeVerdictFailed, outcome.verdict)
+	assert.NotContains(t, outcome.detail, apiKey)
+	assert.Contains(t, outcome.detail, "***")
+	assert.NotContains(t, healthProbeReason(outcome.verdict, "gpt-4o-mini", outcome.detail), apiKey)
 }

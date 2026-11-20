@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -33,10 +34,14 @@ const (
 	// healthProbeChannelWorkers bounds how many channels one sweep probes at
 	// the same time.
 	healthProbeChannelWorkers = 4
-	healthProbeMaxTokens      = 5
-	healthProbePrompt         = "hi"
-	healthProbeMaxBodyBytes   = 1 << 20
-	healthProbeDetailRunes    = 200
+	// healthProbeNetworkDownMinAccounts is how many accounts behind one proxy
+	// setting must all fail without any HTTP answer before the sweep reads it as
+	// an outage of the probe host's own network or proxy, not as dead upstreams.
+	healthProbeNetworkDownMinAccounts = 3
+	healthProbeMaxTokens              = 5
+	healthProbePrompt                 = "hi"
+	healthProbeMaxBodyBytes           = 1 << 20
+	healthProbeDetailRunes            = 200
 
 	healthProbeDefaultOpenAIModel    = "gpt-4o-mini"
 	healthProbeDefaultAnthropicModel = "claude-3-5-haiku-20241022"
@@ -77,20 +82,36 @@ type healthProbeOutcome struct {
 	verdict       healthProbeVerdict
 	detail        string
 	latencyMillis int64
+	// noResponse marks a failure with no HTTP answer at all (DNS, connect, TLS,
+	// timeout): the path to the upstream is broken, which says nothing about
+	// the account itself.
+	noResponse bool
+}
+
+// healthProbeAccountResult is one probed account. The verdicts are applied to
+// the channel rows only after the whole sweep has finished, so an outage of the
+// probe host's own network can be told apart from dead upstreams first.
+type healthProbeAccountResult struct {
+	channel    *model.Channel
+	keyIndex   int
+	usingKey   string // the key exactly as GetKeys lists it; empty for a single-key channel
+	proxyURL   string
+	probeModel string
+	outcome    healthProbeOutcome
 }
 
 type healthProbeStats struct {
-	accounts int
-	healthy  int
-	degraded int
-	failed   int
-	skipped  int
+	accounts   int
+	healthy    int
+	degraded   int
+	failed     int
+	suppressed int
+	skipped    int
 }
 
 var (
 	healthProbeOnce    sync.Once
 	healthProbeRunning atomic.Bool
-	healthProbeClient  = &http.Client{Timeout: healthProbeRequestTimeout}
 )
 
 // healthProbeDegradedMarkers are the boilerplate answers a degraded or
@@ -128,6 +149,11 @@ var healthProbeNonChatMarkers = []string{
 // StartHealthProber starts the periodic channel health probe. Call it once
 // from main during initialization; extra calls are ignored. Only the master
 // node probes, so a multi-node deployment runs one sweep per interval.
+//
+// The first sweep runs one interval after start, not at boot: right after a
+// restart the network or the proxy may not be up yet, and a sweep then would
+// take healthy channels out of rotation. An admin can sweep at once through
+// POST /api/channel/probe.
 func StartHealthProber(interval time.Duration) {
 	if interval <= 0 {
 		interval = DefaultHealthProbeInterval
@@ -137,14 +163,13 @@ func StartHealthProber(interval time.Duration) {
 			return
 		}
 		gopool.Go(func() {
-			common.SysLog(common.LogText("channel health prober started: interval=%s", interval))
+			common.SysLog(common.LogText("channel health prober started: interval=%s, first sweep in %s", interval, interval))
 			ticker := time.NewTicker(interval)
 			defer ticker.Stop()
-			for {
+			for range ticker.C {
 				if !TriggerHealthProbeAsync() {
 					common.SysLog(common.LogText("channel health probe: previous sweep still running, skipping this tick"))
 				}
-				<-ticker.C
 			}
 		})
 	})
@@ -168,8 +193,8 @@ func TriggerHealthProbeAsync() bool {
 }
 
 // runHealthProbeSweep probes every channel that is in, or was removed from,
-// the routing pool by an automatic decision. Manually disabled channels are
-// never probed or re-enabled.
+// the routing pool by an automatic decision, then applies the verdicts.
+// Manually disabled channels are never probed or re-enabled.
 func runHealthProbeSweep() {
 	startedAt := time.Now()
 	channels, err := loadHealthProbeChannels()
@@ -182,8 +207,12 @@ func runHealthProbeSweep() {
 		return
 	}
 
+	type channelProbe struct {
+		results []healthProbeAccountResult
+		skipped int
+	}
 	semaphore := make(chan struct{}, healthProbeChannelWorkers)
-	statsCh := make(chan healthProbeStats, len(channels))
+	probes := make(chan channelProbe, len(channels))
 	var wg sync.WaitGroup
 	for _, channel := range channels {
 		channel := channel
@@ -192,31 +221,31 @@ func runHealthProbeSweep() {
 		gopool.Go(func() {
 			defer wg.Done()
 			defer func() { <-semaphore }()
-			stats := healthProbeStats{}
+			probe := channelProbe{}
 			defer func() {
 				if recovered := recover(); recovered != nil {
 					common.SysLog(common.LogText("channel health probe: panic on channel_id=%d: %v", channel.Id, recovered))
-					stats = healthProbeStats{skipped: 1}
+					probe = channelProbe{skipped: 1}
 				}
-				statsCh <- stats
+				probes <- probe
 			}()
-			stats = probeChannelHealth(channel)
+			probe.results, probe.skipped = probeChannelHealth(channel)
 		})
 	}
 	wg.Wait()
-	close(statsCh)
+	close(probes)
 
-	var summary healthProbeStats
-	for stats := range statsCh {
-		summary.accounts += stats.accounts
-		summary.healthy += stats.healthy
-		summary.degraded += stats.degraded
-		summary.failed += stats.failed
-		summary.skipped += stats.skipped
+	var results []healthProbeAccountResult
+	skipped := 0
+	for probe := range probes {
+		results = append(results, probe.results...)
+		skipped += probe.skipped
 	}
+	summary := applyHealthProbeResults(results)
+	summary.skipped += skipped
 	common.SysLog(common.LogText(
-		"channel health probe finished: channels=%d accounts=%d healthy=%d degraded=%d failed=%d skipped=%d duration=%s",
-		len(channels), summary.accounts, summary.healthy, summary.degraded, summary.failed, summary.skipped,
+		"channel health probe finished: channels=%d accounts=%d healthy=%d degraded=%d failed=%d suppressed=%d skipped=%d duration=%s",
+		len(channels), summary.accounts, summary.healthy, summary.degraded, summary.failed, summary.suppressed, summary.skipped,
 		time.Since(startedAt).Round(time.Millisecond),
 	))
 }
@@ -224,7 +253,7 @@ func runHealthProbeSweep() {
 func loadHealthProbeChannels() ([]*model.Channel, error) {
 	var channels []*model.Channel
 	err := model.DB.
-		Select("id", "name", "type", "key", "base_url", "test_model", "models", "status", "channel_info", "auto_ban").
+		Select("id", "name", "type", "key", "base_url", "test_model", "models", "model_mapping", "setting", "status", "channel_info", "auto_ban").
 		Where("status IN ?", []int{
 			common.ChannelStatusEnabled,
 			common.ChannelStatusAutoDisabled,
@@ -238,90 +267,182 @@ func loadHealthProbeChannels() ([]*model.Channel, error) {
 	return channels, nil
 }
 
-// probeChannelHealth probes up to healthProbeMaxAccounts accounts of one
-// channel and applies the verdict to the channel row.
-func probeChannelHealth(channel *model.Channel) healthProbeStats {
-	stats := healthProbeStats{}
-
+// probeChannelHealth asks the upstream with up to healthProbeMaxAccounts
+// accounts of one channel. It writes nothing: applyHealthProbeResults applies
+// the verdicts once the whole sweep is in. skipped counts what it could not
+// probe at all.
+func probeChannelHealth(channel *model.Channel) (results []healthProbeAccountResult, skipped int) {
 	protocol, ok := healthProbeProtocolForChannel(channel.Type)
 	if !ok {
-		stats.skipped = 1
 		if common.DebugEnabled {
 			common.SysLog(common.LogText("channel health probe: skipped channel_id=%d type=%d: channel type has no probe protocol", channel.Id, channel.Type))
 		}
-		return stats
+		return nil, 1
 	}
 
 	probeModel, ok := healthProbeModelForChannel(channel, protocol)
 	if !ok {
-		stats.skipped = 1
 		common.SysLog(common.LogText("channel health probe: skipped channel_id=%d name=%q: no chat model to probe", channel.Id, channel.Name))
-		return stats
+		return nil, 1
 	}
+	// Clients ask for the listed name; the upstream knows the mapped one.
+	probeModel = healthProbeMappedModel(channel.GetModelMapping(), probeModel)
 
 	baseURL := strings.TrimSpace(channel.GetBaseURL())
 	if baseURL == "" {
-		stats.skipped = 1
 		common.SysLog(common.LogText("channel health probe: skipped channel_id=%d name=%q: empty base url", channel.Id, channel.Name))
-		return stats
+		return nil, 1
 	}
+
+	// Reach the upstream the way the relay does, through the channel's own
+	// proxy and transport settings. Any other route would report an outage
+	// that real traffic never sees, and disable a healthy channel for it.
+	setting := channel.GetSetting()
+	client, err := GetHttpClientWithProxySettings(setting.Proxy, setting)
+	if err != nil {
+		common.SysLog(common.LogText("channel health probe: skipped channel_id=%d name=%q: proxy setting unusable: %v", channel.Id, channel.Name, err))
+		return nil, 1
+	}
+	proxyURL := strings.TrimSpace(setting.Proxy)
 
 	keys := channel.GetKeys()
 	if len(keys) > healthProbeMaxAccounts {
 		keys = keys[:healthProbeMaxAccounts]
 	}
 	if len(keys) == 0 {
-		stats.skipped = 1
 		common.SysLog(common.LogText("channel health probe: skipped channel_id=%d name=%q: no account key", channel.Id, channel.Name))
-		return stats
+		return nil, 1
 	}
 
 	for index, rawKey := range keys {
 		key := strings.TrimSpace(rawKey)
-		if key == "" {
+		if !healthProbeIsPlainAPIKey(key) {
+			// An empty line or a structured credential (JSON) is no bearer
+			// token: probing with it would only report a failure of our own.
+			skipped++
 			continue
 		}
-		stats.accounts++
 
 		usingKey := ""
 		if channel.ChannelInfo.IsMultiKey {
-			usingKey = key
+			// Status updates find the key by the exact string GetKeys lists.
+			usingKey = rawKey
 		}
 
-		outcome := probeChannelAccount(baseURL, protocol, key, probeModel)
+		ctx, cancel := context.WithTimeout(context.Background(), healthProbeRequestTimeout)
+		outcome := probeChannelAccount(ctx, client, baseURL, protocol, key, probeModel)
+		cancel()
+
+		results = append(results, healthProbeAccountResult{
+			channel:    channel,
+			keyIndex:   index,
+			usingKey:   usingKey,
+			proxyURL:   proxyURL,
+			probeModel: probeModel,
+			outcome:    outcome,
+		})
+	}
+	return results, skipped
+}
+
+// applyHealthProbeResults writes the verdicts of one finished sweep to the
+// channel rows and returns the tallies. Disabling is withheld for the accounts
+// behind a proxy setting that none of them got any answer through (see
+// healthProbeUnreachableProxies): that is the probe host's own network or proxy
+// failing, and acting on it would take healthy channels out of rotation.
+// Recovery is never withheld.
+func applyHealthProbeResults(results []healthProbeAccountResult) healthProbeStats {
+	unreachable := healthProbeUnreachableProxies(results)
+	for proxyURL := range unreachable {
+		common.SysLog(common.LogText(
+			"channel health probe: no account behind %s got any answer, treating it as an outage of this host's network or proxy and keeping the channels in rotation this sweep",
+			healthProbeRouteName(proxyURL),
+		))
+	}
+
+	stats := healthProbeStats{accounts: len(results)}
+	for _, result := range results {
+		channel, outcome := result.channel, result.outcome
 		channel.UpdateResponseTime(outcome.latencyMillis)
 
 		switch outcome.verdict {
 		case healthProbeVerdictHealthy:
 			stats.healthy++
 			channel.ResetErrorCount()
-			healthProbeRestoreChannel(channel, index, usingKey)
+			healthProbeRestoreChannel(channel, result.keyIndex, result.usingKey)
 
 		case healthProbeVerdictDegraded:
 			stats.degraded++
 			common.SysLog(common.LogText(
 				"channel health probe: channel_id=%d name=%q model=%s account=%d degraded: %s",
-				channel.Id, channel.Name, probeModel, index+1, healthProbePreview(outcome.detail),
+				channel.Id, channel.Name, result.probeModel, result.keyIndex+1, healthProbePreview(outcome.detail),
 			))
 			if channel.GetAutoBan() {
-				model.UpdateChannelStatus(channel.Id, usingKey, common.ChannelStatusDegraded,
-					healthProbeReason(outcome.verdict, probeModel, outcome.detail))
+				model.UpdateChannelStatus(channel.Id, result.usingKey, common.ChannelStatusDegraded,
+					healthProbeReason(outcome.verdict, result.probeModel, outcome.detail))
 			}
 
-		case healthProbeVerdictFailed:
+		default:
 			stats.failed++
+			if outcome.noResponse && unreachable[result.proxyURL] {
+				stats.suppressed++
+				common.SysLog(common.LogText(
+					"channel health probe: channel_id=%d name=%q account=%d unreachable, not counted against the account: %s",
+					channel.Id, channel.Name, result.keyIndex+1, healthProbePreview(outcome.detail),
+				))
+				continue
+			}
 			channel.IncrementErrorCount()
 			common.SysLog(common.LogText(
 				"channel health probe: channel_id=%d name=%q model=%s account=%d failed: %s",
-				channel.Id, channel.Name, probeModel, index+1, healthProbePreview(outcome.detail),
+				channel.Id, channel.Name, result.probeModel, result.keyIndex+1, healthProbePreview(outcome.detail),
 			))
 			if channel.GetAutoBan() {
-				model.UpdateChannelStatus(channel.Id, usingKey, common.ChannelStatusAutoDisabled,
-					healthProbeReason(outcome.verdict, probeModel, outcome.detail))
+				model.UpdateChannelStatus(channel.Id, result.usingKey, common.ChannelStatusAutoDisabled,
+					healthProbeReason(outcome.verdict, result.probeModel, outcome.detail))
 			}
 		}
 	}
 	return stats
+}
+
+// healthProbeUnreachableProxies returns the proxy settings ("" is the direct
+// route) behind which at least healthProbeNetworkDownMinAccounts accounts were
+// probed and not one got any HTTP answer. Dead upstreams still answer, with an
+// error status; silence from all of them means the way to them is broken.
+func healthProbeUnreachableProxies(results []healthProbeAccountResult) map[string]bool {
+	type tally struct{ answered, silent int }
+	tallies := make(map[string]*tally)
+	for _, result := range results {
+		t := tallies[result.proxyURL]
+		if t == nil {
+			t = &tally{}
+			tallies[result.proxyURL] = t
+		}
+		if result.outcome.noResponse {
+			t.silent++
+		} else {
+			t.answered++
+		}
+	}
+	unreachable := make(map[string]bool)
+	for proxyURL, t := range tallies {
+		if t.answered == 0 && t.silent >= healthProbeNetworkDownMinAccounts {
+			unreachable[proxyURL] = true
+		}
+	}
+	return unreachable
+}
+
+// healthProbeRouteName names a proxy setting for logs without its credentials.
+func healthProbeRouteName(proxyURL string) string {
+	if proxyURL == "" {
+		return "the direct route"
+	}
+	if parsed, err := url.Parse(proxyURL); err == nil && parsed.Host != "" {
+		return "proxy " + parsed.Host
+	}
+	return "a channel proxy"
 }
 
 // healthProbeRestoreChannel puts a channel, or one key of it, back into
@@ -388,15 +509,24 @@ func healthProbeRestoreChannelKey(channelId int, keyIndex int) {
 	}
 }
 
-// probeChannelAccount sends one minimal chat request and classifies the answer.
-func probeChannelAccount(baseURL string, protocol healthProbeProtocol, apiKey string, probeModel string) healthProbeOutcome {
+// probeChannelAccount sends one minimal chat request through client and
+// classifies the answer. ctx bounds the whole exchange, the body read
+// included, so a hanging upstream cannot stall the caller. The key never
+// reaches the returned detail, which is logged and stored with the channel.
+func probeChannelAccount(ctx context.Context, client *http.Client, baseURL string, protocol healthProbeProtocol, apiKey string, probeModel string) healthProbeOutcome {
+	outcome := doProbeChannelAccount(ctx, client, baseURL, protocol, apiKey, probeModel)
+	if apiKey != "" {
+		outcome.detail = strings.ReplaceAll(outcome.detail, apiKey, "***")
+	}
+	return outcome
+}
+
+func doProbeChannelAccount(ctx context.Context, client *http.Client, baseURL string, protocol healthProbeProtocol, apiKey string, probeModel string) healthProbeOutcome {
 	payload, err := healthProbeRequestBody(protocol, probeModel)
 	if err != nil {
 		return healthProbeOutcome{verdict: healthProbeVerdictFailed, detail: "build request body: " + err.Error()}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), healthProbeRequestTimeout)
-	defer cancel()
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, healthProbeEndpoint(baseURL, protocol), bytes.NewReader(payload))
 	if err != nil {
 		return healthProbeOutcome{verdict: healthProbeVerdictFailed, detail: "build request: " + err.Error()}
@@ -411,10 +541,10 @@ func probeChannelAccount(baseURL string, protocol healthProbeProtocol, apiKey st
 	}
 
 	startedAt := time.Now()
-	response, err := healthProbeClient.Do(request)
+	response, err := client.Do(request)
 	latencyMillis := time.Since(startedAt).Milliseconds()
 	if err != nil {
-		return healthProbeOutcome{verdict: healthProbeVerdictFailed, detail: err.Error(), latencyMillis: latencyMillis}
+		return healthProbeOutcome{verdict: healthProbeVerdictFailed, detail: err.Error(), latencyMillis: latencyMillis, noResponse: true}
 	}
 	defer response.Body.Close()
 
@@ -482,7 +612,8 @@ func healthProbeEndpoint(baseURL string, protocol healthProbeProtocol) string {
 
 // healthProbeProtocolForChannel maps channel types to a protocol the probe can
 // speak. Deployment-scoped (Azure), native (Gemini/Baidu/…), subscription
-// (Codex), video and task channels are skipped on purpose.
+// (Codex), video, task and advanced-custom channels (vLLM and SGLang among
+// them, whose route presets can move the chat path) are skipped on purpose.
 func healthProbeProtocolForChannel(channelType int) (healthProbeProtocol, bool) {
 	switch channelType {
 	case constant.ChannelTypeAnthropic:
@@ -504,9 +635,7 @@ func healthProbeProtocolForChannel(channelType int) (healthProbeProtocol, bool) 
 		constant.ChannelTypeXai,
 		constant.ChannelTypeSubmodel,
 		constant.ChannelTypeSub2API,
-		constant.ChannelTypeNewAPI,
-		constant.ChannelTypeVLLM,
-		constant.ChannelTypeSGLang:
+		constant.ChannelTypeNewAPI:
 		return healthProbeProtocolOpenAI, true
 	default:
 		return healthProbeProtocolOpenAI, false
@@ -670,6 +799,46 @@ func healthProbeClassifyResponseText(text string) healthProbeVerdict {
 
 func healthProbeReason(verdict healthProbeVerdict, probeModel string, detail string) string {
 	return fmt.Sprintf("health probe %s (model=%s): %s", verdict, probeModel, healthProbePreview(detail))
+}
+
+// healthProbeIsPlainAPIKey reports a key that can be sent as a bearer token:
+// non-empty and not a structured credential such as a JSON service account.
+func healthProbeIsPlainAPIKey(key string) bool {
+	if key == "" {
+		return false
+	}
+	switch key[0] {
+	case '{', '[', '"':
+		return false
+	}
+	return true
+}
+
+// healthProbeMappedModel resolves name through a channel's model_mapping the
+// way the relay does: it follows the chain to its end and keeps name when the
+// mapping is absent, unreadable or loops.
+func healthProbeMappedModel(modelMapping string, name string) string {
+	modelMapping = strings.TrimSpace(modelMapping)
+	if modelMapping == "" || modelMapping == "{}" {
+		return name
+	}
+	mapping := make(map[string]string)
+	if err := json.Unmarshal([]byte(modelMapping), &mapping); err != nil {
+		return name
+	}
+	current := name
+	visited := map[string]bool{current: true}
+	for {
+		next, ok := mapping[current]
+		if !ok || next == "" || next == current {
+			return current
+		}
+		if visited[next] {
+			return name
+		}
+		visited[next] = true
+		current = next
+	}
 }
 
 // healthProbePreview collapses a detail to one short, single-line snippet for

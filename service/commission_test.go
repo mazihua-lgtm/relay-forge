@@ -74,7 +74,7 @@ func TestCommissionSettle(t *testing.T) {
 		relayInfo := &relaycommon.RelayInfo{UserId: invitee.Id, IsPlayground: true}
 		require.NoError(t, PostConsumeQuota(relayInfo, 1000, 0, false))
 
-		assert.Equal(t, 100, commissionQuotaOf(t, inviter.Id), "inviter earns 10%% of the consumption")
+		assert.Equal(t, 100, commissionQuotaOf(t, inviter.Id), "inviter earns 10% of the consumption")
 		assert.Equal(t, 4000, commissionQuotaOf(t, invitee.Id), "invitee still pays the full consumption")
 
 		logs := inviterSystemLogs(t, inviter.Id)

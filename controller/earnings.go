@@ -34,64 +34,61 @@ func (w earningsWindow) dateRange() earningsDateRange {
 	return earningsDateRange{Start: w.startDate, End: w.endDate}
 }
 
-// parseEarningsWindow reads start_date and end_date (YYYY-MM-DD). Either may be
-// omitted: a missing start reaches back 30 days, a missing end is today, and the
-// end date includes its whole day.
+// parseEarningsWindow reads start_date and end_date (YYYY-MM-DD, local calendar).
+// A missing end_date is today and a missing start_date reaches back 30 days from
+// end_date; the end date includes its whole day. The window must stay within the
+// longest log time range, so one request cannot aggregate the whole log table.
 func parseEarningsWindow(c *gin.Context) (earningsWindow, error) {
 	now := time.Now()
 	end := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+	if raw := strings.TrimSpace(c.Query("end_date")); raw != "" {
+		parsed, err := time.ParseInLocation(earningsDateLayout, raw, time.Local)
+		if err != nil {
+			return earningsWindow{}, common.NewMessage("Invalid {{field}}, expected YYYY-MM-DD", map[string]any{"field": "end_date"})
+		}
+		end = parsed
+	}
 	start := end.AddDate(0, 0, -(earningsDefaultRangeDays - 1))
 	if raw := strings.TrimSpace(c.Query("start_date")); raw != "" {
 		parsed, err := time.ParseInLocation(earningsDateLayout, raw, time.Local)
 		if err != nil {
-			return earningsWindow{}, common.NewMessage("Invalid start_date, expected YYYY-MM-DD")
+			return earningsWindow{}, common.NewMessage("Invalid {{field}}, expected YYYY-MM-DD", map[string]any{"field": "start_date"})
 		}
 		start = parsed
-	}
-	if raw := strings.TrimSpace(c.Query("end_date")); raw != "" {
-		parsed, err := time.ParseInLocation(earningsDateLayout, raw, time.Local)
-		if err != nil {
-			return earningsWindow{}, common.NewMessage("Invalid end_date, expected YYYY-MM-DD")
-		}
-		end = parsed
 	}
 	if end.Before(start) {
 		return earningsWindow{}, common.NewMessage("start_date must not be later than end_date")
 	}
-	return earningsWindow{
+	window := earningsWindow{
 		startTimestamp: start.Unix(),
 		endTimestamp:   end.AddDate(0, 0, 1).Unix() - 1,
 		startDate:      start.Format(earningsDateLayout),
 		endDate:        end.Format(earningsDateLayout),
-	}, nil
+	}
+	if _, err := limitLogTimeRange(window.startTimestamp, window.endTimestamp); err != nil {
+		return earningsWindow{}, err
+	}
+	return window, nil
 }
 
 // earningsPageQuery reads the p/page_size pair used by the grouped reports.
-// The page size is clamped to the model limits so no request can ask for an
-// unbounded result set.
+// Both are clamped, so no request can ask for an unbounded result set or push
+// the row offset out of range.
 func earningsPageQuery(c *gin.Context) (page int, pageSize int) {
 	page, _ = strconv.Atoi(c.Query("p"))
-	if page < 1 {
-		page = 1
-	}
+	page = min(max(page, 1), math.MaxInt32)
 	pageSize, _ = strconv.Atoi(c.Query("page_size"))
 	if pageSize < 1 {
 		pageSize = model.EarningsDefaultLimit
 	}
-	if pageSize > model.EarningsMaxLimit {
-		pageSize = model.EarningsMaxLimit
-	}
-	return page, pageSize
+	return page, min(pageSize, model.EarningsMaxLimit)
 }
 
-// earningsPageOffset converts a 1-based page to a row offset. The multiplication
-// is done in int64 and clamped so a hand-written p cannot overflow it.
+// earningsPageOffset converts a 1-based page to a row offset. Page and page size
+// are already clamped, so the product fits in int64; the offset itself stays
+// within int32.
 func earningsPageOffset(page int, pageSize int) int {
-	offset := int64(page-1) * int64(pageSize)
-	if offset < 0 || offset > math.MaxInt32 {
-		offset = math.MaxInt32
-	}
-	return int(offset)
+	return int(min(int64(page-1)*int64(pageSize), math.MaxInt32))
 }
 
 // earningsFigures is the money block shared by the overview and both grouped
@@ -148,16 +145,19 @@ func earningsCostSource(recorded bool) string {
 
 // buildEarningsFigures turns raw log sums into the reported money block. The
 // cost is the recorded cost_quota sum when the log table has one, and otherwise
-// the quota-based estimate; gross_margin is rounded to four decimals.
-func buildEarningsFigures(revenue int64, refund int64, costQuota int64, requestCount int64, costRecorded bool) earningsFigures {
+// the quota-based estimate. A refund hands quota back to the user but does not
+// show that the upstream refunded the channel, so the estimate prices the gross
+// charge, the conservative side for a profit figure. gross_margin is profit over
+// net revenue, rounded to four decimals, and 0 when there is no net revenue.
+func buildEarningsFigures(revenue int64, refund int64, recordedCost int64, requestCount int64, costRecorded bool) earningsFigures {
 	netRevenue := revenue - refund
-	cost := costQuota
+	cost := recordedCost
 	if !costRecorded {
-		cost = int64(math.Round(float64(revenue) / model.EarningsCostRatio))
+		cost = model.EstimateUpstreamCost(revenue)
 	}
 	profit := netRevenue - cost
 	margin := 0.0
-	if netRevenue != 0 {
+	if netRevenue > 0 {
 		margin = math.Round(float64(profit)/float64(netRevenue)*10000) / 10000
 	}
 	return earningsFigures{
