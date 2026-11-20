@@ -16,6 +16,7 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/model"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 	"github.com/mazihua-lgtm/relay-forge/setting/operation_setting"
 
 	"github.com/bytedance/gopkg/util/gopool"
@@ -361,6 +362,11 @@ func probeChannelHealth(channel *model.Channel) (results []healthProbeAccountRes
 // (healthProbeRestoreChannel). With both off the probe only records response
 // time, failure count and log lines.
 //
+// Every change goes through the same functions a failed request or a channel
+// test uses (DisableChannel, EnableChannel) or their degraded counterpart
+// (DegradeChannel), so the administrators who watch channels hear about it the
+// same way, once per change.
+//
 // Disabling is also withheld for the accounts behind a proxy setting that none
 // of them got any answer through (see healthProbeUnreachableProxies): that is
 // the probe host's own network or proxy failing, and acting on it would take
@@ -392,8 +398,7 @@ func applyHealthProbeResults(results []healthProbeAccountResult) healthProbeStat
 				channel.Id, channel.Name, result.probeModel, result.keyIndex+1, healthProbePreview(outcome.detail),
 			))
 			if channel.GetAutoBan() && common.AutomaticDisableChannelEnabled {
-				model.UpdateChannelStatus(channel.Id, result.usingKey, common.ChannelStatusDegraded,
-					healthProbeReason(outcome.verdict, result.probeModel, outcome.detail))
+				DegradeChannel(healthProbeChannelError(channel, result.usingKey), healthProbeStatusReason(result))
 			}
 
 		default:
@@ -412,8 +417,7 @@ func applyHealthProbeResults(results []healthProbeAccountResult) healthProbeStat
 				channel.Id, channel.Name, result.probeModel, result.keyIndex+1, healthProbePreview(outcome.detail),
 			))
 			if channel.GetAutoBan() && healthProbeShouldDisable(outcome) {
-				model.UpdateChannelStatus(channel.Id, result.usingKey, common.ChannelStatusAutoDisabled,
-					healthProbeReason(outcome.verdict, result.probeModel, outcome.detail))
+				DisableChannel(healthProbeChannelError(channel, result.usingKey), healthProbeStatusReason(result))
 			}
 		}
 	}
@@ -509,14 +513,14 @@ func healthProbeRestoreChannel(channel *model.Channel, keyIndex int, usingKey st
 	// has as a no-op, which is exactly the case of one disabled key inside an
 	// enabled multi-key channel: write the key status itself.
 	if channel.ChannelInfo.IsMultiKey && channel.Status == common.ChannelStatusEnabled {
-		healthProbeRestoreChannelKey(channel.Id, keyIndex)
+		healthProbeRestoreChannelKey(channel.Id, channel.Name, keyIndex)
 		return
 	}
 	stored, err := model.GetChannelById(channel.Id, true)
 	if err != nil || stored.Status == common.ChannelStatusManuallyDisabled {
 		return
 	}
-	if model.UpdateChannelStatus(channel.Id, usingKey, common.ChannelStatusEnabled, "") {
+	if EnableChannel(channel.Id, usingKey, channel.Name) {
 		common.SysLog(common.LogText(
 			"channel health probe: channel_id=%d name=%q account=%d recovered, status set to enabled",
 			channel.Id, channel.Name, keyIndex+1,
@@ -525,8 +529,9 @@ func healthProbeRestoreChannel(channel *model.Channel, keyIndex int, usingKey st
 }
 
 // healthProbeRestoreChannelKey clears one key's disabled status inside a
-// multi-key channel whose own status stays enabled.
-func healthProbeRestoreChannelKey(channelId int, keyIndex int) {
+// multi-key channel whose own status stays enabled, and announces it like the
+// restore of a whole channel.
+func healthProbeRestoreChannelKey(channelId int, channelName string, keyIndex int) {
 	written, err := model.UpdateChannelOtherInfo(channelId, func(stored *model.Channel) (map[string]any, error) {
 		if !stored.ChannelInfo.IsMultiKey ||
 			stored.Status == common.ChannelStatusManuallyDisabled ||
@@ -554,6 +559,7 @@ func healthProbeRestoreChannelKey(channelId int, keyIndex int) {
 			"channel health probe: channel_id=%d key_index=%d recovered, key set to enabled",
 			channelId, keyIndex,
 		))
+		notifyChannelEnabled(channelId, channelName)
 	}
 }
 
@@ -849,6 +855,23 @@ func healthProbeClassifyResponseText(text string) healthProbeVerdict {
 
 func healthProbeReason(verdict healthProbeVerdict, probeModel string, detail string) string {
 	return fmt.Sprintf("health probe %s (model=%s): %s", verdict, probeModel, healthProbePreview(detail))
+}
+
+// healthProbeStatusReason is the reason stored with a status the probe sets and
+// quoted in the notice. In a multi-key channel only one key is affected, so it
+// names the key; the notice would otherwise read as if the whole channel went.
+func healthProbeStatusReason(result healthProbeAccountResult) string {
+	reason := healthProbeReason(result.outcome.verdict, result.probeModel, result.outcome.detail)
+	if result.channel.ChannelInfo.IsMultiKey {
+		return fmt.Sprintf("key #%d: %s", result.keyIndex+1, reason)
+	}
+	return reason
+}
+
+// healthProbeChannelError describes the probed account the way a failed request
+// does, for the functions that change a channel's status and announce it.
+func healthProbeChannelError(channel *model.Channel, usingKey string) types.ChannelError {
+	return *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey, usingKey, channel.GetAutoBan())
 }
 
 // healthProbeIsPlainAPIKey reports a key that can be sent as a bearer token:

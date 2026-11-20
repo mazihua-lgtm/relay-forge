@@ -106,6 +106,8 @@ const (
 	MsgChannelNotifyDisabledContent  = "channel.notify_disabled_content"
 	MsgChannelNotifyEnabledSubject   = "channel.notify_enabled_subject"
 	MsgChannelNotifyEnabledContent   = "channel.notify_enabled_content"
+	MsgChannelNotifyDegradedSubject  = "channel.notify_degraded_subject"
+	MsgChannelNotifyDegradedContent  = "channel.notify_degraded_content"
 	MsgChannelNotifyScheduledSubject = "channel.notify_scheduled_subject"
 	MsgChannelTestCompletedSubject   = "channel.test_completed_subject"
 	MsgChannelTestCompletedContent   = "channel.test_completed_content"

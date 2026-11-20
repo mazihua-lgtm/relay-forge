@@ -52,14 +52,23 @@ func DisableChannel(channelError types.ChannelError, reason string) {
 	}
 }
 
-func EnableChannel(channelId int, usingKey string, channelName string) {
+// EnableChannel puts a channel, or one key of it, back into rotation and
+// reports whether its status changed; only a change is announced.
+func EnableChannel(channelId int, usingKey string, channelName string) bool {
 	success := model.UpdateChannelStatus(channelId, usingKey, common.ChannelStatusEnabled, "")
 	if success {
-		params := map[string]any{"Name": channelName, "Id": channelId}
-		NotifyChannelWatchers(formatNotifyType(channelId, common.ChannelStatusEnabled), func(lang string) (string, string) {
-			return i18n.Translate(lang, i18n.MsgChannelNotifyEnabledSubject, params), i18n.Translate(lang, i18n.MsgChannelNotifyEnabledContent, params)
-		})
+		notifyChannelEnabled(channelId, channelName)
 	}
+	return success
+}
+
+// notifyChannelEnabled tells the administrators who watch channels that a
+// channel, or one key of it, is back in rotation.
+func notifyChannelEnabled(channelId int, channelName string) {
+	params := map[string]any{"Name": channelName, "Id": channelId}
+	NotifyChannelWatchers(formatNotifyType(channelId, common.ChannelStatusEnabled), func(lang string) (string, string) {
+		return i18n.Translate(lang, i18n.MsgChannelNotifyEnabledSubject, params), i18n.Translate(lang, i18n.MsgChannelNotifyEnabledContent, params)
+	})
 }
 
 func ShouldDisableChannel(err *types.NewAPIError) bool {
