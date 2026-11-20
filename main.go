@@ -167,6 +167,11 @@ func main() {
 	// Subscription quota reset task (daily/weekly/monthly/custom)
 	service.StartSubscriptionQuotaResetTask()
 
+	// Channel health probe every 30 minutes: marks channels whose accounts
+	// fail or answer with empty / evasive output, and restores the ones that
+	// answer normally again. Master node only.
+	go service.StartHealthProber(30 * time.Minute)
+
 	// Report this process as a system instance so the System Info page can show
 	// all currently alive nodes in multi-instance deployments.
 	service.StartSystemInstanceReporter()

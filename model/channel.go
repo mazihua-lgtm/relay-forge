@@ -36,7 +36,8 @@ type Channel struct {
 	Weight             *uint   `json:"weight" gorm:"default:0"`
 	CreatedTime        int64   `json:"created_time" gorm:"bigint"`
 	TestTime           int64   `json:"test_time" gorm:"bigint"`
-	ResponseTime       int     `json:"response_time"` // in milliseconds
+	ResponseTime       int     `json:"response_time"`                // in milliseconds
+	ErrorCount         int     `json:"error_count" gorm:"default:0"` // consecutive health-probe failures
 	BaseURL            *string `json:"base_url" gorm:"column:base_url;default:''"`
 	Other              string  `json:"other"`
 	Balance            float64 `json:"balance"` // in USD
@@ -672,6 +673,31 @@ func (channel *Channel) UpdateResponseTime(responseTime int64) {
 	if err != nil {
 		common.SysLog(common.LogText("failed to update response time: channel_id=%d, error=%v", channel.Id, err))
 	}
+}
+
+// IncrementErrorCount records one more failed health probe on the channel.
+func (channel *Channel) IncrementErrorCount() {
+	err := DB.Model(&Channel{}).Where("id = ?", channel.Id).
+		UpdateColumn("error_count", gorm.Expr("COALESCE(error_count, 0) + 1")).Error
+	if err != nil {
+		common.SysLog(common.LogText("failed to increment channel error count: channel_id=%d, error=%v", channel.Id, err))
+	}
+	channel.ErrorCount++
+}
+
+// ResetErrorCount clears the health-probe failure counter after a probe that
+// answered normally.
+func (channel *Channel) ResetErrorCount() {
+	if channel.ErrorCount == 0 {
+		return
+	}
+	err := DB.Model(&Channel{}).Where("id = ?", channel.Id).
+		UpdateColumn("error_count", 0).Error
+	if err != nil {
+		common.SysLog(common.LogText("failed to reset channel error count: channel_id=%d, error=%v", channel.Id, err))
+		return
+	}
+	channel.ErrorCount = 0
 }
 
 func (channel *Channel) UpdateBalance(balance float64) {

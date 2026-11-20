@@ -272,6 +272,11 @@ const (
 	ChannelStatusEnabled          = 1 // don't use 0, 0 is the default value!
 	ChannelStatusManuallyDisabled = 2 // also don't use 0
 	ChannelStatusAutoDisabled     = 3
+	// ChannelStatusDegraded marks a channel the automatic health probe found
+	// reachable but answering with empty or evasive output (a degraded model).
+	// Like an auto-disabled channel it leaves the routing pool until a later
+	// probe or a manual test succeeds.
+	ChannelStatusDegraded = 4
 )
 
 const (

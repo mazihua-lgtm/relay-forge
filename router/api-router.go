@@ -161,6 +161,7 @@ func SetApiRouter(router *gin.Engine) {
 				adminRoute.DELETE("/:id/oauth/bindings/:provider_id", controller.UnbindCustomOAuthByAdmin)
 				adminRoute.DELETE("/:id/bindings/:binding_type", controller.AdminClearUserBinding)
 				adminRoute.GET("/:id", controller.GetUser)
+				adminRoute.PATCH("/:id/commission", controller.UpdateUserCommission)
 				adminRoute.POST("/", controller.CreateUser)
 				adminRoute.POST("/manage", controller.ManageUser)
 				adminRoute.PUT("/", controller.UpdateUser)
@@ -339,6 +340,16 @@ func SetApiRouter(router *gin.Engine) {
 		logRoute.GET("/export", middleware.AdminAuth(), controller.ExportAllLogs)
 		logRoute.GET("/self/export", middleware.UserAuth(), controller.ExportUserLogs)
 		logRoute.GET("/self/search", middleware.UserAuth(), middleware.SearchRateLimit(), controller.SearchUserLogs)
+
+		// Operator earnings: upstream cost against the quota charged to users,
+		// aggregated from the same usage logs the log dashboard reads.
+		earningsAdminRoute := apiRouter.Group("/admin/earnings")
+		earningsAdminRoute.Use(middleware.DisableCache(), middleware.AdminAuth())
+		{
+			earningsAdminRoute.GET("/overview", controller.GetEarningsOverview)
+			earningsAdminRoute.GET("/by-channel", controller.GetEarningsByChannel)
+			earningsAdminRoute.GET("/by-model", controller.GetEarningsByModel)
+		}
 
 		systemTaskRoute := apiRouter.Group("/system-task")
 		systemTaskRoute.Use(middleware.RootAuth())

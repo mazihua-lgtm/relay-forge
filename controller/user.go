@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -731,6 +732,52 @@ func UpdateUser(c *gin.Context) {
 		"message": "",
 	})
 	return
+}
+
+type UpdateUserCommissionRequest struct {
+	CommissionRate *float64 `json:"commission_rate"`
+}
+
+// UpdateUserCommission sets the continuous commission rate a user earns from
+// their invitees' consumption. Only admins can call it; the rate must sit in
+// [0, 1].
+func UpdateUserCommission(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		common.ApiErrorT(c, "Invalid parameters")
+		return
+	}
+	var req UpdateUserCommissionRequest
+	if err := common.DecodeJson(c.Request.Body, &req); err != nil || req.CommissionRate == nil {
+		common.ApiErrorT(c, "Invalid parameters")
+		return
+	}
+	rate := *req.CommissionRate
+	if math.IsNaN(rate) || math.IsInf(rate, 0) || rate < 0 || rate > 1 {
+		common.ApiErrorT(c, "Invalid input {{error}}", map[string]any{"error": "commission_rate must be between 0 and 1"})
+		return
+	}
+	user, err := model.GetUserById(id, false)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if !canManageTargetRole(c.GetInt("role"), user.Role) {
+		common.ApiErrorT(c, "No permission to update users of same or higher permission level")
+		return
+	}
+	if err := model.UpdateUserCommissionRate(id, rate); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	recordManageAuditFor(c, id, "user.commission", map[string]any{
+		"username":        user.Username,
+		"commission_rate": rate,
+	})
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+	})
 }
 
 func AdminClearUserBinding(c *gin.Context) {

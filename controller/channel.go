@@ -2609,3 +2609,19 @@ func OllamaVersion(c *gin.Context) {
 		},
 	})
 }
+
+// TriggerHealthProbe starts one full channel health-probe sweep in the
+// background and answers 202 at once: the sweep talks to many upstreams and
+// must not hold the admin request open.
+func TriggerHealthProbe(c *gin.Context) {
+	started := service.TriggerHealthProbeAsync()
+	message := "channel health probe already running"
+	if started {
+		message = "channel health probe started"
+	}
+	c.JSON(http.StatusAccepted, gin.H{
+		"success": true,
+		"started": started,
+		"message": message,
+	})
+}

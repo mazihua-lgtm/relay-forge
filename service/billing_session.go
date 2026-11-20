@@ -53,6 +53,8 @@ func (s *BillingSession) Settle(actualQuota int) error {
 	delta := actualQuota - s.preConsumedQuota
 	if delta == 0 {
 		s.settled = true
+		// 预扣额度已覆盖全部消耗，消费仍然成立，抽成照付。
+		settleInviterCommission(s.relayInfo, actualQuota)
 		return nil
 	}
 	// 1) 调整资金来源（仅在尚未提交时执行，防止重复调用）
@@ -81,6 +83,8 @@ func (s *BillingSession) Settle(actualQuota int) error {
 		s.relayInfo.SubscriptionPostDelta += int64(delta)
 	}
 	s.settled = true
+	// 分销持续抽成：按本次请求的实际消耗给邀请人返佣（预扣部分也是消耗）。
+	settleInviterCommission(s.relayInfo, actualQuota)
 	return tokenErr
 }
 

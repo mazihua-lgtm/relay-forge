@@ -464,6 +464,9 @@ func postConsumeQuotaWithResult(relayInfo *relaycommon.RelayInfo, quota int, pre
 	}
 	result.FundingApplied = true
 
+	// 分销持续抽成：扣款成功之后给邀请人返佣（失败不影响本次请求）。
+	settleInviterCommission(relayInfo, quota)
+
 	if !relayInfo.IsPlayground {
 		if quota > 0 {
 			err = model.DecreaseTokenQuota(relayInfo.TokenId, relayInfo.TokenKey, quota)

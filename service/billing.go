@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/logger"
+	"github.com/mazihua-lgtm/relay-forge/model"
 	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
-	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -106,4 +107,21 @@ func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuo
 		return PostConsumeQuota(relayInfo, quotaDelta, relayInfo.FinalPreConsumedQuota, true)
 	}
 	return nil
+}
+
+// ---------------------------------------------------------------------------
+// settleInviterCommission — 分销持续抽成
+// ---------------------------------------------------------------------------
+
+// settleInviterCommission 在消费扣款成功后给邀请人入账抽成。
+// 抽成失败不能让已成功的消费请求失败，只记日志：钱已经扣了，丢的只是返佣。
+// 两个结算入口各自调用一次且互斥（BillingSession.Settle 不会走 PostConsumeQuota，
+// 反之亦然），同一次消费不会重复抽成。
+func settleInviterCommission(relayInfo *relaycommon.RelayInfo, quota int) {
+	if relayInfo == nil || relayInfo.UserId <= 0 || quota <= 0 {
+		return
+	}
+	if _, err := model.SettleInviterCommission(relayInfo.UserId, quota); err != nil {
+		common.SysLog(common.LogText("failed to settle inviter commission for user %d (quota=%d): %s", relayInfo.UserId, quota, err.Error()))
+	}
 }

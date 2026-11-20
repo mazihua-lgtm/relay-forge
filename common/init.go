@@ -25,8 +25,8 @@ var (
 func printHelp() {
 	fmt.Println("NewAPI(Based OneAPI) " + Version + " - The next-generation LLM gateway and AI asset management system supports multiple languages.")
 	fmt.Println("Original Project: OneAPI by JustSong - https://github.com/songquanpeng/one-api")
-	fmt.Println("Maintainer: mazihua-lgtm - https://github.com/mazihua-lgtm/relay-forge
-	fmt.Println("Usage: newapi [--port <port>] [--log-dir <log directory>] [--version] [--help]")
+	fmt.Println("Maintainer: mazihua-lgtm - https://github.com/mazihua-lgtm/relay-forge")
+	fmt.Println("Usage: relay-forge [--port <port>] [--log-dir <log directory>] [--version] [--help]")
 }
 
 func InitEnv() {
