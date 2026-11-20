@@ -76,8 +76,60 @@
 
 新增的 admin 路由要登记到 `middleware/access_token_routes.go`，新增的渠道字段要归类到 `controller/channel_authz.go`，否则 `router`、`controller` 里的守卫测试会失败。新增日志列时要想到 ClickHouse 日志库：它的表是 `model/main.go` 里手写的建表语句，不会自动加列。像 `cost_quota` 这样可选的列，要让 `createLog` 在缺列时跳过它，免得一条消费记录因此丢失。
 
+**测试**：根目录的 `go test ./...` **不会进入** `relaykit/`、`tokenkit/` 这两个嵌套的独立 Go 模块（上游要求它们必须能独立构建），它们要分别进目录跑：`cd relaykit && GOWORK=off go build ./... && go vet ./... && go test ./...`，`tokenkit` 同理。前端：`cd web && bun run typecheck && bun run test`。
+
 ## 与上游的关系
 
 - 根提交 `cc19772` 是 new-api 在 `48f9df9` 的源码快照（不含历史）；第二个提交把 Go module 改名为 `github.com/mazihua-lgtm/relay-forge`；之后是本分支的改动。
-- 同步上游的思路：取 `48f9df9..upstream/main` 的差异，把补丁里的模块路径换成本仓库的，应用后 `gofmt -w`（改名会让 import 的排序变化）。**这套流程还没实操过。**
+- 上游的新提交通过 `upstream-sync` 分支并进来，方法见下一节。已同步到上游 `8542c9d`（2026-11-20）。
 - 许可证 AGPL-3.0（见 `LICENSE`），上游版权声明保留。AGPL §13 要求：以网络服务形式向用户提供修改过的版本时，需要向这些用户提供对应源码。做中转站的站长务必留意。
+
+## 同步上游
+
+上游远端叫 `upstream`（推送地址已设成无效值，不会误推）。它是本机的 git 配置，不在仓库里；换一台机器重新克隆后要自己加：`git remote add upstream https://github.com/QuantumNous/new-api.git && git remote set-url --push upstream DISABLED && git config remote.upstream.tagOpt --no-tags`。同步靠一个「上游分支」`upstream-sync`：它只装**改过模块名的上游原样代码**，每次同步在它上面加一个提交，再并进 main。这样 git 能做真正的三方合并，冲突只会出现在 relay-forge 自己改过的地方。
+
+上游分支和上游原样代码只差两处机械改动，由 `scripts/upstream-sync/rewrite.py` 完成：
+
+1. 所有 `.go` 文件和 `go.mod` 里的 `github.com/QuantumNous/new-api` 换成 `github.com/mazihua-lgtm/relay-forge`。**包括 `relaykit/`、`tokenkit/` 两个嵌套模块自己的 `go.mod`**（当初漏了它们，导致这两个模块不能单独构建）。`.github`、Dockerfile、README 里指向上游项目的地址不动。
+2. 对这些 Go 文件 `gofmt -w`（换名会让 import 的排序变化）。
+
+main 比 `upstream-sync` 多出来的只有 relay-forge 自己的东西：新功能，少量手改的品牌文字（`main.go`、`common/init.go`），以及 Dockerfile 和发布流程里的版本号注入路径。随时可以用 `git diff --stat upstream-sync main` 检查：多出来的文件应当恰好是自己动过的文件，别的都是流程出了问题（2026-11-20 就是这样查出了嵌套模块的 `go.mod` 和一个漏了 gofmt 的测试文件）。
+
+每个上游分支提交的消息里有一行 `Upstream-Commit: <上游完整提交号>`，记录它对应上游的哪个提交。
+
+### 步骤
+
+取上游、审、改写、整树核对，是 2026-11-20 第一次同步里实际跑过的。「在临时工作树里提交」和「`git merge upstream-sync`」用一次演练验证过：在临时工作树里模拟了一个上游新提交，`git merge` 自动找到合并基，无冲突，只带进改动的文件。第一次同步本身因为基线要从零建，是用 `git commit-tree` 手工指定合并基的。
+
+1. 拉取：`env -u NO_PROXY -u no_proxy git -c http.version=HTTP/1.1 -c http.proxy=http://127.0.0.1:7891 fetch --no-tags upstream main`
+2. **先审再合**，这是第三方代码：
+
+   ```
+   BASE=$(git log -1 --format=%B upstream-sync | sed -n 's/^Upstream-Commit: //p')
+   git log --format='%h %an | %s' $BASE..upstream/main     # 来了什么
+   git diff --stat $BASE upstream/main                      # 动了哪些文件
+   ```
+
+   通读 diff，重点看：`go.mod`、`go.sum`、`package.json`、锁文件（新依赖）；脚本和工作流；新增的外联地址；`LICENSE`、`NOTICE`；有没有安全相关的修复。
+3. 在临时工作树里，把上游的改动按规则放到 `upstream-sync` 的顶端：
+
+   ```
+   git worktree add --detach /tmp/sync-wt upstream-sync
+   python3 -I scripts/upstream-sync/rewrite.py delta "$PWD" /tmp/sync-wt $BASE upstream/main > /tmp/sync-go.txt
+   (cd /tmp/sync-wt && xargs gofmt -w < /tmp/sync-go.txt && git add -A && git commit -F <消息文件>)
+   ```
+
+   消息仿照 `git log upstream-sync` 里已有的写法，末尾有 `Upstream-Commit:` 行。
+4. 整树核对，逐文件证明「上游分支 = 上游最新树按规则改写」：`python3 -I scripts/upstream-sync/verify_tree.py "$PWD" <新提交> upstream/main`，必须是 `mismatches: 0`。通过后 `git branch -f upstream-sync <新提交>`，再 `git worktree remove /tmp/sync-wt`。
+5. 合并：`git merge upstream-sync`。有冲突就只会出在自己改过的文件里，两边的改动都要保留。
+6. 测试，三套都要跑（根目录的 `go test ./...` 不含嵌套模块）：
+
+   ```
+   go build ./... && go vet ./... && go test -count=1 ./...
+   for m in relaykit tokenkit; do (cd $m && GOWORK=off go build ./... && go vet ./... && go test -count=1 ./...); done
+   (cd web && bun run typecheck && bun run test)
+   ```
+
+### 同步记录
+
+- 2026-11-20：从 `48f9df9` 同步到 `8542c9d`，3 个提交，无冲突：模型广场不再向访客显示私有分组（定价列表、分组倍率、性能指标都按访客可用分组过滤，管理员看板改走独立的管理员接口 `GET /api/data/perf-metrics/summary`）；Gemini 4 的思考档位按系列前缀匹配；Kling 增加 4:3 和 3:4 画幅。
