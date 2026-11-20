@@ -25,17 +25,20 @@ func GetInviterCommission(inviteeId int) (inviterId int, rate float64, err error
 		Id             int     `gorm:"column:id"`
 		CommissionRate float64 `gorm:"column:commission_rate"`
 	}
+	// Find（而不是 Take）让“没有邀请人”成为空结果而不是 ErrRecordNotFound，
+	// 免得每个无邀请人的用户消费都打一条错误日志。
 	err = DB.Table("users AS invitee").
 		Select("inviter.id AS id, inviter.commission_rate AS commission_rate").
 		Joins("JOIN users AS inviter ON inviter.id = invitee.inviter_id").
 		Where("invitee.id = ? AND invitee.inviter_id > 0 AND invitee.inviter_id <> invitee.id", inviteeId).
 		Where("invitee.deleted_at IS NULL AND inviter.deleted_at IS NULL").
-		Take(&row).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return 0, 0, nil
-	}
+		Limit(1).
+		Find(&row).Error
 	if err != nil {
 		return 0, 0, err
+	}
+	if row.Id <= 0 {
+		return 0, 0, nil
 	}
 	return row.Id, row.CommissionRate, nil
 }

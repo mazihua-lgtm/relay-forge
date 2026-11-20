@@ -772,6 +772,7 @@ func UpdateUserCommission(c *gin.Context) {
 	}
 	recordManageAuditFor(c, id, "user.commission", map[string]any{
 		"username":        user.Username,
+		"id":              id,
 		"commission_rate": rate,
 	})
 	c.JSON(http.StatusOK, gin.H{

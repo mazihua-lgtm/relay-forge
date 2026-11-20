@@ -101,6 +101,7 @@ func TestClearChannelReadOnlyFields(t *testing.T) {
 		CreatedTime:        11,
 		TestTime:           22,
 		ResponseTime:       33,
+		ErrorCount:         7,
 		Balance:            44.5,
 		BalanceUpdatedTime: 55,
 		UsedQuota:          66,
@@ -112,6 +113,7 @@ func TestClearChannelReadOnlyFields(t *testing.T) {
 		"created_time":         channel.CreatedTime,
 		"test_time":            channel.TestTime,
 		"response_time":        channel.ResponseTime,
+		"error_count":          channel.ErrorCount,
 		"balance":              channel.Balance,
 		"balance_updated_time": channel.BalanceUpdatedTime,
 		"used_quota":           channel.UsedQuota,
@@ -122,6 +124,7 @@ func TestClearChannelReadOnlyFields(t *testing.T) {
 	assert.Zero(t, channel.CreatedTime)
 	assert.Zero(t, channel.TestTime)
 	assert.Zero(t, channel.ResponseTime)
+	assert.Zero(t, channel.ErrorCount)
 	assert.Zero(t, channel.Balance)
 	assert.Zero(t, channel.BalanceUpdatedTime)
 	assert.Zero(t, channel.UsedQuota)

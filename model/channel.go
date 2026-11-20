@@ -688,9 +688,6 @@ func (channel *Channel) IncrementErrorCount() {
 // ResetErrorCount clears the health-probe failure counter after a probe that
 // answered normally.
 func (channel *Channel) ResetErrorCount() {
-	if channel.ErrorCount == 0 {
-		return
-	}
 	err := DB.Model(&Channel{}).Where("id = ?", channel.Id).
 		UpdateColumn("error_count", 0).Error
 	if err != nil {

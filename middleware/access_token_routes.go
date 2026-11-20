@@ -114,6 +114,7 @@ var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"DELETE /api/user/:id/oauth/bindings/:provider_id": accessTokenScopeRule("user:write"),
 	"DELETE /api/user/:id/bindings/:binding_type":      accessTokenScopeRule("user:write"),
 	"GET /api/user/:id":                                accessTokenScopeRule("user:read"),
+	"PATCH /api/user/:id/commission":                   accessTokenScopeRule("user:write"),
 	"POST /api/user/":                                  accessTokenScopeRule("user:write"),
 	"POST /api/user/manage":                            accessTokenScopeRule("user:write"),
 	"PUT /api/user/":                                   accessTokenScopeRule("user:write"),
@@ -236,6 +237,12 @@ var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"PUT /api/redemption/":           accessTokenScopeRule("redemption:write"),
 	"DELETE /api/redemption/invalid": accessTokenScopeRule("redemption:write"),
 	"DELETE /api/redemption/:id":     accessTokenScopeRule("redemption:write"),
+
+	// router/api-router.go: /api/admin/earnings (operator earnings dashboard,
+	// built from the same usage logs, so it shares the log:read scope)
+	"GET /api/admin/earnings/overview":   accessTokenScopeRule("log:read"),
+	"GET /api/admin/earnings/by-channel": accessTokenScopeRule("log:read"),
+	"GET /api/admin/earnings/by-model":   accessTokenScopeRule("log:read"),
 
 	// router/api-router.go: /api/audit, /api/log, /api/data
 	"GET /api/audit/self":                       accessTokenScopeRule("usage:read"),

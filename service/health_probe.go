@@ -336,6 +336,13 @@ func healthProbeRestoreChannel(channel *model.Channel, keyIndex int, usingKey st
 	if keyStatus == common.ChannelStatusEnabled && channel.Status == common.ChannelStatusEnabled {
 		return
 	}
+	// UpdateChannelStatus treats an update to the status the channel already
+	// has as a no-op, which is exactly the case of one disabled key inside an
+	// enabled multi-key channel: write the key status itself.
+	if channel.ChannelInfo.IsMultiKey && channel.Status == common.ChannelStatusEnabled {
+		healthProbeRestoreChannelKey(channel.Id, keyIndex)
+		return
+	}
 	stored, err := model.GetChannelById(channel.Id, true)
 	if err != nil || stored.Status == common.ChannelStatusManuallyDisabled {
 		return
@@ -344,6 +351,39 @@ func healthProbeRestoreChannel(channel *model.Channel, keyIndex int, usingKey st
 		common.SysLog(common.LogText(
 			"channel health probe: channel_id=%d name=%q account=%d recovered, status set to enabled",
 			channel.Id, channel.Name, keyIndex+1,
+		))
+	}
+}
+
+// healthProbeRestoreChannelKey clears one key's disabled status inside a
+// multi-key channel whose own status stays enabled.
+func healthProbeRestoreChannelKey(channelId int, keyIndex int) {
+	written, err := model.UpdateChannelOtherInfo(channelId, func(stored *model.Channel) (map[string]any, error) {
+		if !stored.ChannelInfo.IsMultiKey ||
+			stored.Status == common.ChannelStatusManuallyDisabled ||
+			stored.ChannelInfo.MultiKeyStatusList == nil {
+			return nil, nil
+		}
+		if _, disabled := stored.ChannelInfo.MultiKeyStatusList[keyIndex]; !disabled {
+			return nil, nil
+		}
+		delete(stored.ChannelInfo.MultiKeyStatusList, keyIndex)
+		delete(stored.ChannelInfo.MultiKeyDisabledReason, keyIndex)
+		delete(stored.ChannelInfo.MultiKeyDisabledTime, keyIndex)
+		return map[string]any{"status": stored.Status, "channel_info": stored.ChannelInfo}, nil
+	})
+	if err != nil {
+		common.SysLog(common.LogText(
+			"channel health probe: failed to re-enable channel key: channel_id=%d key_index=%d error=%v",
+			channelId, keyIndex, err,
+		))
+		return
+	}
+	if written {
+		model.BumpSyncTopic(model.SyncTopicChannels)
+		common.SysLog(common.LogText(
+			"channel health probe: channel_id=%d key_index=%d recovered, key set to enabled",
+			channelId, keyIndex,
 		))
 	}
 }

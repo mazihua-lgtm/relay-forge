@@ -85,6 +85,7 @@ var channelReadOnlyFields = map[string]struct{}{
 	"created_time":         {},
 	"test_time":            {},
 	"response_time":        {},
+	"error_count":          {}, // consecutive health-probe failures, written only by the probe
 	"balance":              {},
 	"balance_updated_time": {},
 	"used_quota":           {},
@@ -100,6 +101,9 @@ func clearChannelReadOnlyFields(channel *PatchChannel, requestData map[string]an
 	}
 	if _, ok := requestData["response_time"]; ok {
 		channel.ResponseTime = 0
+	}
+	if _, ok := requestData["error_count"]; ok {
+		channel.ErrorCount = 0
 	}
 	if _, ok := requestData["balance"]; ok {
 		channel.Balance = 0
