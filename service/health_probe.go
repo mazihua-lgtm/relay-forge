@@ -16,6 +16,7 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/model"
+	"github.com/mazihua-lgtm/relay-forge/setting/operation_setting"
 
 	"github.com/bytedance/gopkg/util/gopool"
 )
@@ -42,6 +43,9 @@ const (
 	healthProbePrompt                 = "hi"
 	healthProbeMaxBodyBytes           = 1 << 20
 	healthProbeDetailRunes            = 200
+	// healthProbeErrorTextBytes is how much of an error body the operator's
+	// auto-disable keywords are matched against.
+	healthProbeErrorTextBytes = 4 << 10
 
 	healthProbeDefaultOpenAIModel    = "gpt-4o-mini"
 	healthProbeDefaultAnthropicModel = "claude-3-5-haiku-20241022"
@@ -86,6 +90,11 @@ type healthProbeOutcome struct {
 	// timeout): the path to the upstream is broken, which says nothing about
 	// the account itself.
 	noResponse bool
+	// statusCode and errorText describe a non-200 answer: the HTTP status and
+	// the start of the body. They only feed the operator's auto-disable rules
+	// (healthProbeShouldDisable) and are never logged.
+	statusCode int
+	errorText  string
 }
 
 // healthProbeAccountResult is one probed account. The verdicts are applied to
@@ -346,11 +355,16 @@ func probeChannelHealth(channel *model.Channel) (results []healthProbeAccountRes
 }
 
 // applyHealthProbeResults writes the verdicts of one finished sweep to the
-// channel rows and returns the tallies. Disabling is withheld for the accounts
-// behind a proxy setting that none of them got any answer through (see
-// healthProbeUnreachableProxies): that is the probe host's own network or proxy
-// failing, and acting on it would take healthy channels out of rotation.
-// Recovery is never withheld.
+// channel rows and returns the tallies. Routing only changes inside the
+// operator's own switches: automatic disabling (healthProbeShouldDisable, and
+// the global switch for a degraded answer) and automatic enabling
+// (healthProbeRestoreChannel). With both off the probe only records response
+// time, failure count and log lines.
+//
+// Disabling is also withheld for the accounts behind a proxy setting that none
+// of them got any answer through (see healthProbeUnreachableProxies): that is
+// the probe host's own network or proxy failing, and acting on it would take
+// healthy channels out of rotation. That outage does not hold recovery back.
 func applyHealthProbeResults(results []healthProbeAccountResult) healthProbeStats {
 	unreachable := healthProbeUnreachableProxies(results)
 	for proxyURL := range unreachable {
@@ -377,7 +391,7 @@ func applyHealthProbeResults(results []healthProbeAccountResult) healthProbeStat
 				"channel health probe: channel_id=%d name=%q model=%s account=%d degraded: %s",
 				channel.Id, channel.Name, result.probeModel, result.keyIndex+1, healthProbePreview(outcome.detail),
 			))
-			if channel.GetAutoBan() {
+			if channel.GetAutoBan() && common.AutomaticDisableChannelEnabled {
 				model.UpdateChannelStatus(channel.Id, result.usingKey, common.ChannelStatusDegraded,
 					healthProbeReason(outcome.verdict, result.probeModel, outcome.detail))
 			}
@@ -397,13 +411,42 @@ func applyHealthProbeResults(results []healthProbeAccountResult) healthProbeStat
 				"channel health probe: channel_id=%d name=%q model=%s account=%d failed: %s",
 				channel.Id, channel.Name, result.probeModel, result.keyIndex+1, healthProbePreview(outcome.detail),
 			))
-			if channel.GetAutoBan() {
+			if channel.GetAutoBan() && healthProbeShouldDisable(outcome) {
 				model.UpdateChannelStatus(channel.Id, result.usingKey, common.ChannelStatusAutoDisabled,
 					healthProbeReason(outcome.verdict, result.probeModel, outcome.detail))
 			}
 		}
 	}
 	return stats
+}
+
+// healthProbeShouldDisable applies the operator's own auto-disable rules to a
+// failed probe: the same ones new-api applies to failed real requests and to
+// channel tests (ShouldDisableChannel). That is the global "automatic disable"
+// switch, the configured status codes (401 by default) and the configured
+// keywords (exhausted quota, disabled organization, ...).
+//
+// Every other failure is inconclusive and never takes a channel out of
+// rotation: a 429, a 5xx from an overloaded upstream, a timeout. Those are what
+// a busy but healthy relay channel shows, and one probe cannot tell them from a
+// real outage. They are still counted and logged.
+func healthProbeShouldDisable(outcome healthProbeOutcome) bool {
+	if !common.AutomaticDisableChannelEnabled {
+		return false
+	}
+	if outcome.noResponse || outcome.statusCode == 0 {
+		return false
+	}
+	if operation_setting.ShouldDisableByStatusCode(outcome.statusCode) {
+		return true
+	}
+	found, _ := AcSearch(strings.ToLower(outcome.errorText), operation_setting.AutomaticDisableKeywords, true)
+	return found
+}
+
+// healthProbeHead returns at most limit bytes from the start of body.
+func healthProbeHead(body []byte, limit int) string {
+	return string(body[:min(len(body), limit)])
 }
 
 // healthProbeUnreachableProxies returns the proxy settings ("" is the direct
@@ -446,8 +489,13 @@ func healthProbeRouteName(proxyURL string) string {
 }
 
 // healthProbeRestoreChannel puts a channel, or one key of it, back into
-// rotation after a healthy answer. A manual disable always wins.
+// rotation after a healthy answer. A manual disable always wins, and like the
+// built-in channel test it only acts when the operator turned automatic
+// enabling on.
 func healthProbeRestoreChannel(channel *model.Channel, keyIndex int, usingKey string) {
+	if !common.AutomaticEnableChannelEnabled {
+		return
+	}
 	keyStatus := common.ChannelStatusEnabled
 	if channel.ChannelInfo.IsMultiKey && channel.ChannelInfo.MultiKeyStatusList != nil {
 		if status, ok := channel.ChannelInfo.MultiKeyStatusList[keyIndex]; ok {
@@ -557,6 +605,8 @@ func doProbeChannelAccount(ctx context.Context, client *http.Client, baseURL str
 			verdict:       healthProbeVerdictFailed,
 			detail:        fmt.Sprintf("HTTP %d: %s", response.StatusCode, healthProbePreview(string(body))),
 			latencyMillis: latencyMillis,
+			statusCode:    response.StatusCode,
+			errorText:     healthProbeHead(body, healthProbeErrorTextBytes),
 		}
 	}
 
