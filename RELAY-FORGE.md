@@ -76,7 +76,7 @@
 
 新增的 admin 路由要登记到 `middleware/access_token_routes.go`，新增的渠道字段要归类到 `controller/channel_authz.go`，否则 `router`、`controller` 里的守卫测试会失败。新增日志列时要想到 ClickHouse 日志库：它的表是 `model/main.go` 里手写的建表语句，不会自动加列。像 `cost_quota` 这样可选的列，要让 `createLog` 在缺列时跳过它，免得一条消费记录因此丢失。
 
-**测试**：根目录的 `go test ./...` **不会进入** `relaykit/`、`tokenkit/` 这两个嵌套的独立 Go 模块（上游要求它们必须能独立构建），它们要分别进目录跑：`cd relaykit && GOWORK=off go build ./... && go vet ./... && go test ./...`，`tokenkit` 同理。前端：`cd web && bun run typecheck && bun run test`。
+**测试**：后端用 `make test`，它依次测根模块、`relaykit/`、`tokenkit/` 三个 Go 模块。后两个是嵌套的独立模块，根目录的 `go test ./...` **不会进入**它们。上游要求这两个模块必须能独立构建，所以还要在各自目录里 `GOWORK=off go vet ./... && GOWORK=off go build ./...`，上游 CI 就是这么跑的。前端：`cd web && bun run typecheck && bun run test`。
 
 ## 与上游的关系
 
@@ -128,13 +128,15 @@ GitHub 上的 `.github/workflows/upstream-check.yml` 每周一北京时间 09:17
    消息仿照 `git log upstream-sync` 里已有的写法，末尾有 `Upstream-Commit:` 行。
 4. 整树核对，逐文件证明「上游分支 = 上游最新树按规则改写」：`python3 -I scripts/upstream-sync/verify_tree.py "$PWD" <新提交> upstream/main`，必须是 `mismatches: 0`。通过后 `git branch -f upstream-sync <新提交>`，再 `git worktree remove /tmp/sync-wt`。
 5. 合并：`git merge upstream-sync`。有冲突就只会出在自己改过的文件里，两边的改动都要保留。
-6. 测试，三套都要跑（根目录的 `go test ./...` 不含嵌套模块）：
+6. 测试，和上游 CI 一样三个模块各自都要过（根目录的 `go test ./...` 不含嵌套模块，`make test` 含）：
 
    ```
-   go build ./... && go vet ./... && go test -count=1 ./...
-   for m in relaykit tokenkit; do (cd $m && GOWORK=off go build ./... && go vet ./... && go test -count=1 ./...); done
+   for m in . relaykit tokenkit; do (cd $m && GOWORK=off go vet ./... && GOWORK=off go build ./...); done
+   make test
    (cd web && bun run typecheck && bun run test)
    ```
+
+   前端全量测试要在真实目录里跑；在 `node_modules` 是软链接的临时工作树里会大面积失败，那是假象。
 
 ### 同步记录
 
