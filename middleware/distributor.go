@@ -673,6 +673,9 @@ func SetupContextForSelectedChannel(c *gin.Context, channel *model.Channel, mode
 	common.SetContextKey(c, constant.ContextKeyChannelId, channel.Id)
 	common.SetContextKey(c, constant.ContextKeyChannelName, channel.Name)
 	common.SetContextKey(c, constant.ContextKeyChannelType, channel.Type)
+	// Read back when the consume log is written, so the upstream cost of the
+	// request is snapshotted from the channel that actually served it.
+	common.SetContextKey(c, constant.ContextKeyChannelCostRatio, channel.GetCostRatio())
 	common.SetContextKey(c, constant.ContextKeyChannelCreateTime, channel.CreatedTime)
 	common.SetContextKey(c, constant.ContextKeyChannelSetting, channel.GetSetting())
 	otherSettings := channel.GetOtherSettings()

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"math/rand"
 	"slices"
 	"strings"
@@ -60,6 +61,13 @@ type Channel struct {
 	ChannelInfo ChannelInfo `json:"channel_info" gorm:"type:json"`
 
 	OtherSettings string `json:"settings" gorm:"column:settings"` // 其他设置，存储azure版本等不需要检索的信息，详见dto.ChannelOtherSettings
+
+	// CostRatio is what the operator pays upstream for this channel, as a
+	// multiple of the model's base price (the price before the user group
+	// ratio). Nil or 0 means not set: consume logs then carry no cost and the
+	// earnings report estimates it. A pointer, so that an explicit 0 can be
+	// written back (a struct update skips zero values).
+	CostRatio *float64 `json:"cost_ratio" gorm:"default:0"`
 
 	// cache info
 	Keys []string `json:"-" gorm:"-"`
@@ -361,6 +369,20 @@ func (channel *Channel) GetAutoBan() bool {
 		return false
 	}
 	return *channel.AutoBan == 1
+}
+
+// GetCostRatio returns the operator's purchase price of this channel as a
+// multiple of the model base price, or 0 when none is set or the stored value
+// is unusable.
+func (channel *Channel) GetCostRatio() float64 {
+	if channel == nil || channel.CostRatio == nil {
+		return 0
+	}
+	ratio := *channel.CostRatio
+	if math.IsNaN(ratio) || math.IsInf(ratio, 0) || ratio < 0 {
+		return 0
+	}
+	return ratio
 }
 
 // ErrChannelOtherInfoBusy reports a channel whose other_info other writers

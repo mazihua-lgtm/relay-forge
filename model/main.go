@@ -416,6 +416,12 @@ func migrateClickHouseLogDB() error {
 	if err := LOG_DB.Exec(clickHouseLogCreateTableSQL(ttlDays)).Error; err != nil {
 		return err
 	}
+	// The optional upstream cost column (cost_quota, see log_cost.go) is
+	// deliberately not created here. It would be a Nullable column, and the log
+	// reads scan every column of the table; that has not been verified against
+	// the ClickHouse driver, and a scan failure would break the log pages. While
+	// the table lacks the column, createLog leaves it out of every insert, so a
+	// ClickHouse log store keeps working and earnings estimate the cost.
 	return syncClickHouseLogTTL(ttlDays)
 }
 

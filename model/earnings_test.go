@@ -46,9 +46,11 @@ var earningsTestLogs = []struct {
 
 // openEarningsTestDB installs an isolated log database seeded with
 // earningsTestLogs. SQLite always runs; MySQL and PostgreSQL run when
-// TEST_MYSQL_DSN / TEST_POSTGRES_DSN point at a loopback instance. withCostQuota
-// adds the upstream-cost column the stock schema does not have, so both the
-// estimated and the recorded cost paths can be exercised.
+// TEST_MYSQL_DSN / TEST_POSTGRES_DSN point at a loopback instance. Without
+// withCostQuota the upstream-cost column is dropped again, which is a log table
+// from before the column existed (a ClickHouse log store has none); with it the
+// column is there and the consume logs that have a cost carry it, the others
+// stay NULL, so both the estimated and the recorded cost paths are exercised.
 func openEarningsTestDB(t *testing.T, dialect string, withCostQuota bool) {
 	t.Helper()
 	var driver gorm.Dialector
@@ -103,12 +105,17 @@ func openEarningsTestDB(t *testing.T, dialect string, withCostQuota bool) {
 	statement := &gorm.Statement{DB: db}
 	require.NoError(t, statement.Parse(&Log{}))
 	table := statement.Schema.Table
-	if withCostQuota {
-		require.NoError(t, db.Exec("ALTER TABLE "+table+" ADD COLUMN cost_quota bigint NOT NULL DEFAULT 0").Error)
+	if !withCostQuota {
+		require.NoError(t, db.Exec("ALTER TABLE "+table+" DROP COLUMN cost_quota").Error)
+	}
+	insert := db
+	if !withCostQuota {
+		// What createLog does against a table without the column.
+		insert = db.Omit("cost_quota")
 	}
 	for _, row := range earningsTestLogs {
 		log := &Log{Type: row.logType, ChannelId: row.channelId, ModelName: row.modelName, Quota: row.quota, CreatedAt: row.createdAt, Username: "user-1"}
-		require.NoError(t, db.Create(log).Error)
+		require.NoError(t, insert.Create(log).Error)
 		if withCostQuota && row.cost != 0 {
 			require.NoError(t, db.Exec("UPDATE "+table+" SET cost_quota = ? WHERE id = ?", row.cost, log.Id).Error)
 		}
@@ -132,6 +139,7 @@ func TestEarningsDatabaseMatrix(t *testing.T) {
 				assert.EqualValues(t, 2300, overview.Revenue, "consume quota inside the window")
 				assert.EqualValues(t, 200, overview.Refund)
 				assert.EqualValues(t, 0, overview.CostQuota)
+				assert.EqualValues(t, 2300, overview.UnrecordedRevenue, "without the column every consume log is unrecorded")
 				assert.EqualValues(t, 3, overview.RequestCount, "refunds, top-ups and errors are not requests")
 
 				empty, err := GetEarningsOverview(EarningsFilter{StartTimestamp: earningsTestWindowStart - 100, EndTimestamp: earningsTestWindowStart - 50})
@@ -143,16 +151,16 @@ func TestEarningsDatabaseMatrix(t *testing.T) {
 				require.NoError(t, err)
 				require.Len(t, channels, 2)
 				assert.EqualValues(t, 2, total)
-				assert.Equal(t, EarningsChannel{ChannelId: 1, Revenue: 1800, Refund: 200, RequestCount: 2}, channels[0])
-				assert.Equal(t, EarningsChannel{ChannelId: 2, Revenue: 500, Refund: 0, RequestCount: 1}, channels[1])
+				assert.Equal(t, EarningsChannel{ChannelId: 1, Revenue: 1800, Refund: 200, UnrecordedRevenue: 1800, RequestCount: 2}, channels[0])
+				assert.Equal(t, EarningsChannel{ChannelId: 2, Revenue: 500, Refund: 0, UnrecordedRevenue: 500, RequestCount: 1}, channels[1])
 
 				models, total, err := GetEarningsByModel(window, 100, 0)
 				require.NoError(t, err)
 				require.Len(t, models, 3)
 				assert.EqualValues(t, 3, total)
-				assert.Equal(t, EarningsModel{ModelName: "gpt-4o", Revenue: 1200, Refund: 200, RequestCount: 1}, models[0])
-				assert.Equal(t, EarningsModel{ModelName: "gpt-4o-mini", Revenue: 600, RequestCount: 1}, models[1])
-				assert.Equal(t, EarningsModel{ModelName: "claude-sonnet", Revenue: 500, RequestCount: 1}, models[2])
+				assert.Equal(t, EarningsModel{ModelName: "gpt-4o", Revenue: 1200, Refund: 200, UnrecordedRevenue: 1200, RequestCount: 1}, models[0])
+				assert.Equal(t, EarningsModel{ModelName: "gpt-4o-mini", Revenue: 600, UnrecordedRevenue: 600, RequestCount: 1}, models[1])
+				assert.Equal(t, EarningsModel{ModelName: "claude-sonnet", Revenue: 500, UnrecordedRevenue: 500, RequestCount: 1}, models[2])
 
 				// Paging keeps the group order and counts groups rather than rows.
 				second, total, err := GetEarningsByChannel(window, 1, 1)
@@ -178,12 +186,15 @@ func TestEarningsDatabaseMatrix(t *testing.T) {
 				require.NoError(t, err)
 				assert.EqualValues(t, 1900, overview.CostQuota, "1000 + 500 + 400, outside-window and refund rows excluded")
 				assert.EqualValues(t, 2300, overview.Revenue)
+				assert.EqualValues(t, 0, overview.UnrecordedRevenue, "every consume log of the window carries its cost")
 
 				channels, _, err := GetEarningsByChannel(window, 100, 0)
 				require.NoError(t, err)
 				require.Len(t, channels, 2)
 				assert.EqualValues(t, 1500, channels[0].CostQuota)
 				assert.EqualValues(t, 400, channels[1].CostQuota)
+				assert.EqualValues(t, 0, channels[0].UnrecordedRevenue)
+				assert.EqualValues(t, 0, channels[1].UnrecordedRevenue)
 
 				models, _, err := GetEarningsByModel(window, 100, 0)
 				require.NoError(t, err)
@@ -191,6 +202,36 @@ func TestEarningsDatabaseMatrix(t *testing.T) {
 				assert.EqualValues(t, 1000, models[0].CostQuota)
 				assert.EqualValues(t, 500, models[1].CostQuota)
 				assert.EqualValues(t, 400, models[2].CostQuota)
+			})
+
+			// Old logs and channels without a cost ratio have no recorded cost.
+			// They must stay out of the recorded sum and be reported as
+			// unrecorded revenue for the caller to estimate, not read as free.
+			t.Run("logs without a recorded cost are reported as unrecorded revenue", func(t *testing.T) {
+				openEarningsTestDB(t, dialect, true)
+				require.NoError(t, LOG_DB.Model(&Log{}).
+					Where("model_name = ? AND type = ? AND created_at >= ? AND created_at <= ?", "gpt-4o-mini", LogTypeConsume, earningsTestWindowStart, earningsTestWindowEnd).
+					Update("cost_quota", nil).Error)
+
+				overview, err := GetEarningsOverview(window)
+				require.NoError(t, err)
+				assert.EqualValues(t, 2300, overview.Revenue)
+				assert.EqualValues(t, 1400, overview.CostQuota, "1000 + 400, the unrecorded row adds nothing")
+				assert.EqualValues(t, 600, overview.UnrecordedRevenue, "the gpt-4o-mini row")
+
+				channels, _, err := GetEarningsByChannel(window, 100, 0)
+				require.NoError(t, err)
+				require.Len(t, channels, 2)
+				assert.EqualValues(t, 1000, channels[0].CostQuota)
+				assert.EqualValues(t, 600, channels[0].UnrecordedRevenue)
+				assert.EqualValues(t, 400, channels[1].CostQuota)
+				assert.EqualValues(t, 0, channels[1].UnrecordedRevenue)
+
+				models, _, err := GetEarningsByModel(window, 100, 0)
+				require.NoError(t, err)
+				require.Len(t, models, 3)
+				assert.EqualValues(t, 600, models[1].UnrecordedRevenue)
+				assert.EqualValues(t, 0, models[1].CostQuota)
 			})
 		})
 	}

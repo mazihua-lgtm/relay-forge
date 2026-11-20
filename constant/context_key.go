@@ -39,6 +39,9 @@ const (
 	ContextKeyChannelIsMultiKey        ContextKey = "channel_is_multi_key"
 	ContextKeyChannelMultiKeyIndex     ContextKey = "channel_multi_key_index"
 	ContextKeyChannelKey               ContextKey = "channel_key"
+	// ContextKeyChannelCostRatio holds the selected channel's purchase price as
+	// a float64 multiple of the model base price; 0 when none is configured.
+	ContextKeyChannelCostRatio ContextKey = "channel_cost_ratio"
 	// ContextKeyProviderPlugin holds the jsplugin.PinnedPlugin whose relay
 	// routes serve this request on a task plugin channel.
 	ContextKeyProviderPlugin ContextKey = "provider_plugin"

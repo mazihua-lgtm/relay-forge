@@ -90,6 +90,17 @@ func TestClickHouseLogCreateTableSQL(t *testing.T) {
 	assert.Contains(t, withTTL, "TTL toDateTime(created_at) + INTERVAL 30 DAY DELETE")
 }
 
+// The optional upstream cost column is deliberately absent from the ClickHouse
+// log table: it would be Nullable, the log reads scan every column, and that
+// combination has not been verified against the ClickHouse driver. createLog
+// leaves the column out while the table lacks it, and earnings estimate the
+// cost. Whoever verifies it against a real ClickHouse can add the column here
+// together with its ALTER, and then change this test.
+func TestClickHouseLogTableHasNoCostColumnYet(t *testing.T) {
+	assert.NotContains(t, clickHouseLogCreateTableSQL(0), "cost_quota")
+	assert.NotContains(t, clickHouseLogCreateTableSQL(30), "cost_quota")
+}
+
 func TestClickHouseCreateTableHasTTL(t *testing.T) {
 	assert.True(t, clickHouseCreateTableHasTTL("CREATE TABLE logs (...)\nTTL toDateTime(created_at) + INTERVAL 30 DAY DELETE"))
 	assert.True(t, clickHouseCreateTableHasTTL("CREATE TABLE logs (...) TTL toDateTime(created_at)"))

@@ -77,6 +77,11 @@ type Log struct {
 	RequestId         string `json:"request_id,omitempty" gorm:"type:varchar(64);index:idx_logs_request_id;default:''"`
 	UpstreamRequestId string `json:"upstream_request_id,omitempty" gorm:"type:varchar(128);index:idx_logs_upstream_request_id;default:''"`
 	Other             string `json:"other"`
+
+	// CostQuota is the upstream cost of the request in quota, snapshotted when
+	// the log is written (see log_cost.go). NULL means unknown. It is the
+	// operator's margin data, so it is never part of any API response.
+	CostQuota *int `json:"-" gorm:"column:cost_quota"`
 }
 
 // don't use iota, avoid change log type value
@@ -99,7 +104,15 @@ func ensureLogRequestId(log *Log) {
 
 func createLog(log *Log) error {
 	ensureLogRequestId(log)
-	return LOG_DB.Create(log).Error
+	tx := LOG_DB
+	if !LogsRecordCostQuota() {
+		// The cost column is optional. A log table that does not have it (a
+		// ClickHouse log store, a node that started before the master migrated the
+		// schema, or a probe that could not reach the database) must never lose a
+		// consume record over it.
+		tx = tx.Omit("cost_quota")
+	}
+	return tx.Create(log).Error
 }
 
 func clickHouseLogOrder(prefix string) string {
@@ -384,6 +397,7 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 		RequestId:         requestId,
 		UpstreamRequestId: upstreamRequestId,
 		Other:             otherStr,
+		CostQuota:         consumeLogCostQuota(c, params.Quota, other),
 	}
 	err := createLog(log)
 	if err != nil {
@@ -440,6 +454,10 @@ func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
 	}
 	createdAt := common.GetTimestamp()
 	other := params.Other
+	var costQuota *int
+	if params.LogType == LogTypeConsume {
+		costQuota = taskLogCostQuota(params.ChannelId, params.Quota, other)
+	}
 	log := &Log{
 		UserId:    params.UserId,
 		Username:  username,
@@ -453,6 +471,7 @@ func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
 		TokenId:   params.TokenId,
 		Group:     params.Group,
 		Other:     other.JSONString(),
+		CostQuota: costQuota,
 	}
 	err := createLog(log)
 	if err != nil {

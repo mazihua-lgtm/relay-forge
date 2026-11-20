@@ -3,7 +3,8 @@ package model
 import (
 	"database/sql"
 	"strings"
-	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/mazihua-lgtm/relay-forge/common"
 
@@ -47,32 +48,40 @@ type EarningsFilter struct {
 
 // EarningsOverview holds the aggregate sums of one log window. Revenue is the
 // gross quota charged to users and Refund the quota given back, so net revenue
-// is Revenue - Refund. CostQuota is the recorded upstream cost; it is filled
-// only when the log table records it (see LogsRecordCostQuota) and stays zero
-// otherwise, in which case callers estimate with EstimateUpstreamCost.
+// is Revenue - Refund.
+//
+// A consume log carries its upstream cost when the channel had a cost ratio at
+// the time (see log_cost.go). CostQuota sums those recorded costs.
+// UnrecordedRevenue is the quota charged by the consume logs that carry no cost
+// (older logs, channels without a ratio), the part callers price with
+// EstimateUpstreamCost. Both are zero on a log table without the column, where
+// UnrecordedRevenue equals Revenue.
 type EarningsOverview struct {
-	Revenue      int64 `gorm:"column:revenue"`
-	Refund       int64 `gorm:"column:refund"`
-	CostQuota    int64 `gorm:"column:recorded_cost"`
-	RequestCount int64 `gorm:"column:request_count"`
+	Revenue           int64 `gorm:"column:revenue"`
+	Refund            int64 `gorm:"column:refund"`
+	CostQuota         int64 `gorm:"column:recorded_cost"`
+	UnrecordedRevenue int64 `gorm:"column:unrecorded_revenue"`
+	RequestCount      int64 `gorm:"column:request_count"`
 }
 
 // EarningsChannel is one channel's row of the by-channel earnings report.
 type EarningsChannel struct {
-	ChannelId    int   `gorm:"column:channel_id"`
-	Revenue      int64 `gorm:"column:revenue"`
-	Refund       int64 `gorm:"column:refund"`
-	CostQuota    int64 `gorm:"column:recorded_cost"`
-	RequestCount int64 `gorm:"column:request_count"`
+	ChannelId         int   `gorm:"column:channel_id"`
+	Revenue           int64 `gorm:"column:revenue"`
+	Refund            int64 `gorm:"column:refund"`
+	CostQuota         int64 `gorm:"column:recorded_cost"`
+	UnrecordedRevenue int64 `gorm:"column:unrecorded_revenue"`
+	RequestCount      int64 `gorm:"column:request_count"`
 }
 
 // EarningsModel is one model's row of the by-model earnings report.
 type EarningsModel struct {
-	ModelName    string `gorm:"column:model_name"`
-	Revenue      int64  `gorm:"column:revenue"`
-	Refund       int64  `gorm:"column:refund"`
-	CostQuota    int64  `gorm:"column:recorded_cost"`
-	RequestCount int64  `gorm:"column:request_count"`
+	ModelName         string `gorm:"column:model_name"`
+	Revenue           int64  `gorm:"column:revenue"`
+	Refund            int64  `gorm:"column:refund"`
+	CostQuota         int64  `gorm:"column:recorded_cost"`
+	UnrecordedRevenue int64  `gorm:"column:unrecorded_revenue"`
+	RequestCount      int64  `gorm:"column:request_count"`
 }
 
 // earningsLogQuery selects the consume and refund logs of the window. Top-ups,
@@ -85,8 +94,9 @@ func earningsLogQuery(filter EarningsFilter) *gorm.DB {
 }
 
 // earningsSelectExpressions returns the aggregate select list and its bind
-// arguments. The recorded cost is only summed when the table has the column, so
-// the same code runs on stock schemas. Its alias differs from the column name
+// arguments. The recorded cost columns are only used when the table has the
+// cost column, so the same code runs on a log table that predates it: there
+// every consume log is unrecorded. The aliases differ from the column names
 // because ClickHouse resolves an alias inside the aggregate that defines it.
 func earningsSelectExpressions() (string, []any) {
 	expressions := []string{
@@ -97,7 +107,12 @@ func earningsSelectExpressions() (string, []any) {
 	args := []any{LogTypeConsume, LogTypeRefund, LogTypeConsume}
 	if LogsRecordCostQuota() {
 		expressions = append(expressions,
-			"COALESCE(SUM(CASE WHEN type = ? THEN cost_quota ELSE 0 END), 0) AS recorded_cost")
+			"COALESCE(SUM(CASE WHEN type = ? AND cost_quota IS NOT NULL THEN cost_quota ELSE 0 END), 0) AS recorded_cost",
+			"COALESCE(SUM(CASE WHEN type = ? AND cost_quota IS NULL THEN quota ELSE 0 END), 0) AS unrecorded_revenue")
+		args = append(args, LogTypeConsume, LogTypeConsume)
+	} else {
+		expressions = append(expressions,
+			"COALESCE(SUM(CASE WHEN type = ? THEN quota ELSE 0 END), 0) AS unrecorded_revenue")
 		args = append(args, LogTypeConsume)
 	}
 	return strings.Join(expressions, ", "), args
@@ -158,27 +173,37 @@ func getEarningsGroups[T any](filter EarningsFilter, column string, limit int, o
 	return rows, total, nil
 }
 
-var (
-	earningsCostProbeMu  sync.Mutex
-	earningsCostProbeDB  *gorm.DB
-	earningsCostRecorded bool
-)
+// logCostProbe is the remembered answer of LogsRecordCostQuota for one log
+// database handle.
+type logCostProbe struct {
+	db        *gorm.DB
+	recorded  bool
+	checkedAt time.Time
+}
 
-// LogsRecordCostQuota reports whether the log table stores each request's real
-// upstream cost in a cost_quota column. The stock schema does not, so this is
-// normally false and earnings estimate the cost from quota. A definitive answer
-// is remembered per log database handle, which lets a later schema change take
-// effect without a code change; a failed probe (for example a dropped
-// connection) is not remembered and is retried on the next call.
+// logCostProbeRetry is how long a "the column is missing" answer is trusted. A
+// node that starts before the master has migrated the schema must notice the
+// column once it appears, without waiting for a restart.
+const logCostProbeRetry = time.Minute
+
+var logCostProbeState atomic.Pointer[logCostProbe]
+
+// LogsRecordCostQuota reports whether the log table has the cost_quota column.
+// An answer is remembered per log database handle, so a schema change (the
+// master finishing its migration, a test swapping the database) takes effect
+// without a restart: a "yes" is kept, a "no" is asked again after
+// logCostProbeRetry. A failed probe, for example a dropped connection, is not
+// remembered at all and is retried on the next call.
+//
+// It runs on every log write, so a remembered "yes" is read without a lock.
 func LogsRecordCostQuota() bool {
 	db := LOG_DB
-	earningsCostProbeMu.Lock()
-	defer earningsCostProbeMu.Unlock()
-	if earningsCostProbeDB == db {
-		return earningsCostRecorded
+	if state := logCostProbeState.Load(); state != nil && state.db == db &&
+		(state.recorded || time.Since(state.checkedAt) < logCostProbeRetry) {
+		return state.recorded
 	}
 
-	// A missing column is the expected answer, so keep gorm from logging the
+	// A missing column is an expected answer, so keep gorm from logging the
 	// probe's SQL error.
 	silent := db.Session(&gorm.Session{Logger: db.Logger.LogMode(gormlogger.Silent)})
 	var row struct {
@@ -188,9 +213,8 @@ func LogsRecordCostQuota() bool {
 	if err != nil && !strings.Contains(strings.ToLower(err.Error()), "cost_quota") {
 		return false
 	}
-	earningsCostProbeDB = db
-	earningsCostRecorded = err == nil
-	return earningsCostRecorded
+	logCostProbeState.Store(&logCostProbe{db: db, recorded: err == nil, checkedAt: time.Now()})
+	return err == nil
 }
 
 // GetChannelNameMap resolves channel ids to display names for the earnings

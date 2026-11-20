@@ -136,6 +136,7 @@ var channelNonSensitiveFields = map[string]struct{}{
 	"status_code_mapping": {},
 	"priority":            {},
 	"auto_ban":            {},
+	"cost_ratio":          {}, // reporting only: feeds the earnings cost, never routing
 	"other_info":          {},
 	"tag":                 {},
 	"remark":              {},

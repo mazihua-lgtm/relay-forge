@@ -17,8 +17,11 @@ const (
 	earningsDefaultRangeDays = 30
 	earningsDateLayout       = "2006-01-02"
 
+	// Where a figure's cost came from: recorded from the channel cost ratio at
+	// the time of each request, estimated from the quota, or a mix of both.
 	earningsCostSourceRecorded  = "recorded"
 	earningsCostSourceEstimated = "estimated"
+	earningsCostSourceMixed     = "mixed"
 )
 
 // earningsWindow is one resolved reporting window. The dates are kept in the
@@ -93,7 +96,8 @@ func earningsPageOffset(page int, pageSize int) int {
 
 // earningsFigures is the money block shared by the overview and both grouped
 // reports. total_revenue is net of refunds; refund_quota is what was given back,
-// so gross charged quota is total_revenue + refund_quota.
+// so gross charged quota is total_revenue + refund_quota. cost_source says how
+// total_cost was obtained for this row: recorded, estimated, or mixed.
 type earningsFigures struct {
 	TotalRevenue int64   `json:"total_revenue"`
 	TotalCost    int64   `json:"total_cost"`
@@ -101,6 +105,7 @@ type earningsFigures struct {
 	GrossMargin  float64 `json:"gross_margin"`
 	RequestCount int64   `json:"request_count"`
 	RefundQuota  int64   `json:"refund_quota"`
+	CostSource   string  `json:"cost_source"`
 }
 
 type earningsDateRange struct {
@@ -108,11 +113,12 @@ type earningsDateRange struct {
 	End   string `json:"end"`
 }
 
+// earningsOverviewResponse carries cost_ratio, the default multiplier the
+// estimated part of the cost uses; recorded costs do not depend on it.
 type earningsOverviewResponse struct {
 	earningsFigures
-	CostSource string            `json:"cost_source"`
-	CostRatio  float64           `json:"cost_ratio"`
-	DateRange  earningsDateRange `json:"date_range"`
+	CostRatio float64           `json:"cost_ratio"`
+	DateRange earningsDateRange `json:"date_range"`
 }
 
 type earningsChannelItem struct {
@@ -136,25 +142,33 @@ type earningsListResponse struct {
 	DateRange  earningsDateRange `json:"date_range"`
 }
 
-func earningsCostSource(recorded bool) string {
-	if recorded {
+// earningsCostSource tells how the cost of a row was obtained. revenue is the
+// gross quota the row's consume logs charged and unrecordedRevenue the part of
+// it whose logs carry no recorded cost: all of it is estimated, none of it is
+// recorded, anything between is mixed. A row that charged nothing has nothing
+// to price, so it counts as estimated.
+func earningsCostSource(revenue int64, unrecordedRevenue int64) string {
+	switch {
+	case revenue <= 0 || unrecordedRevenue >= revenue:
+		return earningsCostSourceEstimated
+	case unrecordedRevenue <= 0:
 		return earningsCostSourceRecorded
+	default:
+		return earningsCostSourceMixed
 	}
-	return earningsCostSourceEstimated
 }
 
 // buildEarningsFigures turns raw log sums into the reported money block. The
-// cost is the recorded cost_quota sum when the log table has one, and otherwise
-// the quota-based estimate. A refund hands quota back to the user but does not
-// show that the upstream refunded the channel, so the estimate prices the gross
-// charge, the conservative side for a profit figure. gross_margin is profit over
-// net revenue, rounded to four decimals, and 0 when there is no net revenue.
-func buildEarningsFigures(revenue int64, refund int64, recordedCost int64, requestCount int64, costRecorded bool) earningsFigures {
+// cost is the recorded cost of the logs that carry one, plus the quota-based
+// estimate for the quota of the logs that do not, so old logs and channels
+// without a cost ratio are never priced at zero. A refund hands quota back to
+// the user but does not show that the upstream refunded the channel, so costs
+// are priced on the gross charge, the conservative side for a profit figure.
+// gross_margin is profit over net revenue, rounded to four decimals, and 0 when
+// there is no net revenue.
+func buildEarningsFigures(revenue int64, refund int64, recordedCost int64, unrecordedRevenue int64, requestCount int64) earningsFigures {
 	netRevenue := revenue - refund
-	cost := recordedCost
-	if !costRecorded {
-		cost = model.EstimateUpstreamCost(revenue)
-	}
+	cost := recordedCost + model.EstimateUpstreamCost(unrecordedRevenue)
 	profit := netRevenue - cost
 	margin := 0.0
 	if netRevenue > 0 {
@@ -167,7 +181,18 @@ func buildEarningsFigures(revenue int64, refund int64, recordedCost int64, reque
 		GrossMargin:  margin,
 		RequestCount: requestCount,
 		RefundQuota:  refund,
+		CostSource:   earningsCostSource(revenue, unrecordedRevenue),
 	}
+}
+
+// windowCostSource is the cost source of a whole window, for the grouped
+// reports whose rows are only one page of it.
+func windowCostSource(filter model.EarningsFilter) (string, error) {
+	overview, err := model.GetEarningsOverview(filter)
+	if err != nil {
+		return "", err
+	}
+	return earningsCostSource(overview.Revenue, overview.UnrecordedRevenue), nil
 }
 
 // GetEarningsOverview reports revenue, upstream cost and gross profit for the
@@ -186,10 +211,8 @@ func GetEarningsOverview(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	costRecorded := model.LogsRecordCostQuota()
 	common.ApiSuccess(c, earningsOverviewResponse{
-		earningsFigures: buildEarningsFigures(overview.Revenue, overview.Refund, overview.CostQuota, overview.RequestCount, costRecorded),
-		CostSource:      earningsCostSource(costRecorded),
+		earningsFigures: buildEarningsFigures(overview.Revenue, overview.Refund, overview.CostQuota, overview.UnrecordedRevenue, overview.RequestCount),
 		CostRatio:       model.EarningsCostRatio,
 		DateRange:       window.dateRange(),
 	})
@@ -203,15 +226,20 @@ func GetEarningsByChannel(c *gin.Context) {
 		return
 	}
 	page, pageSize := earningsPageQuery(c)
-	rows, total, err := model.GetEarningsByChannel(model.EarningsFilter{
+	filter := model.EarningsFilter{
 		StartTimestamp: window.startTimestamp,
 		EndTimestamp:   window.endTimestamp,
-	}, pageSize, earningsPageOffset(page, pageSize))
+	}
+	rows, total, err := model.GetEarningsByChannel(filter, pageSize, earningsPageOffset(page, pageSize))
 	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
-	costRecorded := model.LogsRecordCostQuota()
+	costSource, err := windowCostSource(filter)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	channelIds := make([]int, 0, len(rows))
 	for _, row := range rows {
 		channelIds = append(channelIds, row.ChannelId)
@@ -220,7 +248,7 @@ func GetEarningsByChannel(c *gin.Context) {
 	items := make([]earningsChannelItem, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, earningsChannelItem{
-			earningsFigures: buildEarningsFigures(row.Revenue, row.Refund, row.CostQuota, row.RequestCount, costRecorded),
+			earningsFigures: buildEarningsFigures(row.Revenue, row.Refund, row.CostQuota, row.UnrecordedRevenue, row.RequestCount),
 			ChannelId:       row.ChannelId,
 			ChannelName:     channelNames[row.ChannelId],
 		})
@@ -230,7 +258,7 @@ func GetEarningsByChannel(c *gin.Context) {
 		Total:      total,
 		Page:       page,
 		PageSize:   pageSize,
-		CostSource: earningsCostSource(costRecorded),
+		CostSource: costSource,
 		CostRatio:  model.EarningsCostRatio,
 		DateRange:  window.dateRange(),
 	})
@@ -244,19 +272,24 @@ func GetEarningsByModel(c *gin.Context) {
 		return
 	}
 	page, pageSize := earningsPageQuery(c)
-	rows, total, err := model.GetEarningsByModel(model.EarningsFilter{
+	filter := model.EarningsFilter{
 		StartTimestamp: window.startTimestamp,
 		EndTimestamp:   window.endTimestamp,
-	}, pageSize, earningsPageOffset(page, pageSize))
+	}
+	rows, total, err := model.GetEarningsByModel(filter, pageSize, earningsPageOffset(page, pageSize))
 	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
-	costRecorded := model.LogsRecordCostQuota()
+	costSource, err := windowCostSource(filter)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	items := make([]earningsModelItem, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, earningsModelItem{
-			earningsFigures: buildEarningsFigures(row.Revenue, row.Refund, row.CostQuota, row.RequestCount, costRecorded),
+			earningsFigures: buildEarningsFigures(row.Revenue, row.Refund, row.CostQuota, row.UnrecordedRevenue, row.RequestCount),
 			ModelName:       row.ModelName,
 		})
 	}
@@ -265,7 +298,7 @@ func GetEarningsByModel(c *gin.Context) {
 		Total:      total,
 		Page:       page,
 		PageSize:   pageSize,
-		CostSource: earningsCostSource(costRecorded),
+		CostSource: costSource,
 		CostRatio:  model.EarningsCostRatio,
 		DateRange:  window.dateRange(),
 	})

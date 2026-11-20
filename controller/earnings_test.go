@@ -241,3 +241,129 @@ func TestEarningsWindowIncludesWholeEndDay(t *testing.T) {
 	assert.EqualValues(t, 5000, nextDay["total_revenue"])
 	assert.EqualValues(t, 1, nextDay["request_count"])
 }
+
+// seedMixedCostLogs is one day of traffic where only some consume logs carry the
+// upstream cost recorded at the time: the gpt-4o and claude requests do, the
+// gpt-4o-mini request (an old log, or a channel without a cost ratio) does not.
+func seedMixedCostLogs(t *testing.T, db *gorm.DB, withRefund bool) {
+	t.Helper()
+	at := func(hour int) int64 { return earningsTestDay.Add(time.Duration(hour) * time.Hour).Unix() }
+	cost := func(v int) *int { return &v }
+	logs := []*model.Log{
+		{Type: model.LogTypeConsume, ChannelId: 1, ModelName: "gpt-4o", Quota: 1200, CostQuota: cost(500), CreatedAt: at(9)},
+		{Type: model.LogTypeConsume, ChannelId: 1, ModelName: "gpt-4o-mini", Quota: 600, CreatedAt: at(10)},
+		{Type: model.LogTypeConsume, ChannelId: 2, ModelName: "claude-sonnet", Quota: 500, CostQuota: cost(450), CreatedAt: at(11)},
+	}
+	if withRefund {
+		logs = append(logs, &model.Log{Type: model.LogTypeRefund, ChannelId: 1, ModelName: "gpt-4o", Quota: 200, CreatedAt: at(12)})
+	}
+	for _, log := range logs {
+		require.NoError(t, db.Create(log).Error)
+	}
+}
+
+func earningsItems(t *testing.T, data map[string]any) []map[string]any {
+	t.Helper()
+	raw, ok := data["items"].([]any)
+	require.True(t, ok)
+	items := make([]map[string]any, 0, len(raw))
+	for _, entry := range raw {
+		item, ok := entry.(map[string]any)
+		require.True(t, ok)
+		items = append(items, item)
+	}
+	return items
+}
+
+// A recorded cost is used as is; only the quota of the logs without one is
+// estimated, so a mix of old and new data is neither priced at zero nor
+// estimated over the real figures.
+func TestEarningsMixRecordedAndEstimatedCost(t *testing.T) {
+	db := setupEarningsControllerTest(t)
+	seedMixedCostLogs(t, db, false)
+	const window = "?start_date=2026-11-10&end_date=2026-11-10"
+
+	overview := requestEarnings(t, GetEarningsOverview, window)
+	assert.EqualValues(t, 2300, overview["total_revenue"])
+	assert.EqualValues(t, 1450, overview["total_cost"], "500 + 450 recorded, plus round(600 / 1.2) = 500 estimated")
+	assert.EqualValues(t, 850, overview["gross_profit"])
+	assert.InDelta(t, 0.3696, overview["gross_margin"], 1e-9)
+	assert.Equal(t, "mixed", overview["cost_source"])
+
+	byChannel := requestEarnings(t, GetEarningsByChannel, window)
+	assert.Equal(t, "mixed", byChannel["cost_source"], "the whole window, not just this page")
+	channels := earningsItems(t, byChannel)
+	require.Len(t, channels, 2)
+	assert.EqualValues(t, 1, channels[0]["channel_id"])
+	assert.EqualValues(t, 1000, channels[0]["total_cost"], "500 recorded + 500 estimated")
+	assert.EqualValues(t, 800, channels[0]["gross_profit"])
+	assert.Equal(t, "mixed", channels[0]["cost_source"])
+	assert.EqualValues(t, 2, channels[1]["channel_id"])
+	assert.EqualValues(t, 450, channels[1]["total_cost"], "recorded only")
+	assert.EqualValues(t, 50, channels[1]["gross_profit"])
+	assert.Equal(t, "recorded", channels[1]["cost_source"])
+
+	byModel := requestEarnings(t, GetEarningsByModel, window)
+	assert.Equal(t, "mixed", byModel["cost_source"])
+	models := earningsItems(t, byModel)
+	require.Len(t, models, 3)
+	assert.Equal(t, "gpt-4o", models[0]["model_name"])
+	assert.Equal(t, "recorded", models[0]["cost_source"])
+	assert.EqualValues(t, 500, models[0]["total_cost"])
+	assert.Equal(t, "gpt-4o-mini", models[1]["model_name"])
+	assert.Equal(t, "estimated", models[1]["cost_source"])
+	assert.EqualValues(t, 500, models[1]["total_cost"], "round(600 / 1.2)")
+	assert.Equal(t, "claude-sonnet", models[2]["model_name"])
+	assert.Equal(t, "recorded", models[2]["cost_source"])
+}
+
+func TestEarningsCostSourceFollowsTheRecordedShare(t *testing.T) {
+	cost := func(v int) *int { return &v }
+	at := func(hour int) int64 { return earningsTestDay.Add(time.Duration(hour) * time.Hour).Unix() }
+	const window = "?start_date=2026-11-10&end_date=2026-11-10"
+
+	t.Run("every consume log recorded", func(t *testing.T) {
+		db := setupEarningsControllerTest(t)
+		require.NoError(t, db.Create(&model.Log{Type: model.LogTypeConsume, ChannelId: 1, ModelName: "gpt-4o", Quota: 1000, CostQuota: cost(400), CreatedAt: at(9)}).Error)
+		overview := requestEarnings(t, GetEarningsOverview, window)
+		assert.Equal(t, "recorded", overview["cost_source"])
+		assert.EqualValues(t, 400, overview["total_cost"], "no estimate is mixed in")
+		assert.EqualValues(t, 600, overview["gross_profit"])
+	})
+
+	t.Run("no consume log recorded", func(t *testing.T) {
+		db := setupEarningsControllerTest(t)
+		seedEarningsControllerLogs(t, db)
+		assert.Equal(t, "estimated", requestEarnings(t, GetEarningsOverview, window)["cost_source"])
+	})
+
+	t.Run("a recorded cost of zero is a recorded cost", func(t *testing.T) {
+		db := setupEarningsControllerTest(t)
+		require.NoError(t, db.Create(&model.Log{Type: model.LogTypeConsume, ChannelId: 1, ModelName: "free-upstream", Quota: 1000, CostQuota: cost(0), CreatedAt: at(9)}).Error)
+		overview := requestEarnings(t, GetEarningsOverview, window)
+		assert.Equal(t, "recorded", overview["cost_source"], "a channel bought for nothing is not an unknown cost")
+		assert.EqualValues(t, 0, overview["total_cost"])
+		assert.EqualValues(t, 1000, overview["gross_profit"])
+	})
+
+	t.Run("an empty window has nothing to price", func(t *testing.T) {
+		setupEarningsControllerTest(t)
+		overview := requestEarnings(t, GetEarningsOverview, window)
+		assert.Equal(t, "estimated", overview["cost_source"])
+		assert.EqualValues(t, 0, overview["total_cost"])
+	})
+}
+
+// A refund gives the user quota back; it is not a request and has no cost, so it
+// must neither add estimated cost nor turn recorded data into a mix.
+func TestEarningsRefundsDoNotChangeTheCost(t *testing.T) {
+	db := setupEarningsControllerTest(t)
+	seedMixedCostLogs(t, db, true)
+
+	overview := requestEarnings(t, GetEarningsOverview, "?start_date=2026-11-10&end_date=2026-11-10")
+	assert.EqualValues(t, 2100, overview["total_revenue"], "2300 charged - 200 refunded")
+	assert.EqualValues(t, 200, overview["refund_quota"])
+	assert.EqualValues(t, 1450, overview["total_cost"], "the same cost as without the refund")
+	assert.EqualValues(t, 650, overview["gross_profit"])
+	assert.Equal(t, "mixed", overview["cost_source"])
+}
