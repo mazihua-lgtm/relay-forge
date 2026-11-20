@@ -9,7 +9,7 @@ import (
 	"unicode"
 
 	"github.com/MoeForge/moego/regexp"
-	"github.com/QuantumNous/new-api/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
 )
 
 const (

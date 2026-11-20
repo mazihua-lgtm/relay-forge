@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/QuantumNous/new-api/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
 )
 
 func (token Token) cacheMAC() (string, error) {

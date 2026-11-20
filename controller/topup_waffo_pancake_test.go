@@ -4,9 +4,9 @@ import (
 	"maps"
 	"testing"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/setting"
-	"github.com/QuantumNous/new-api/setting/operation_setting"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/setting"
+	"github.com/mazihua-lgtm/relay-forge/setting/operation_setting"
 	"github.com/stretchr/testify/require"
 )
 

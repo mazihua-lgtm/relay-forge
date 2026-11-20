@@ -14,14 +14,14 @@ import (
 	"time"
 
 	"github.com/MoeForge/moego/regexp"
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/pkg/jsplugin"
-	"github.com/QuantumNous/new-api/pkg/requestpatch"
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
-	"github.com/QuantumNous/new-api/relaykit/relayconvert/reasoning"
-	"github.com/QuantumNous/new-api/relaykit/types"
-	"github.com/QuantumNous/new-api/service"
-	"github.com/QuantumNous/new-api/setting/request_plugin_setting"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
+	"github.com/mazihua-lgtm/relay-forge/pkg/requestpatch"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/reasoning"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
+	"github.com/mazihua-lgtm/relay-forge/service"
+	"github.com/mazihua-lgtm/relay-forge/setting/request_plugin_setting"
 	"github.com/tidwall/gjson"
 )
 

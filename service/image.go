@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/MoeForge/moego/base64"
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/constant"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/constant"
 
 	"golang.org/x/image/webp"
 )

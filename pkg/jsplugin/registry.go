@@ -19,11 +19,11 @@ import (
 	"unicode/utf8"
 
 	"github.com/MoeForge/moego/regexp"
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/constant"
-	"github.com/QuantumNous/new-api/logger"
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
-	"github.com/QuantumNous/new-api/relaykit/dto"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/constant"
+	"github.com/mazihua-lgtm/relay-forge/logger"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
 )
 
 const APIVersion1 = 1

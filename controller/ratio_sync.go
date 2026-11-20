@@ -16,13 +16,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/logger"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/logger"
 
-	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/relaykit/dto"
-	"github.com/QuantumNous/new-api/setting/billing_setting"
-	"github.com/QuantumNous/new-api/setting/ratio_setting"
+	"github.com/mazihua-lgtm/relay-forge/model"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
+	"github.com/mazihua-lgtm/relay-forge/setting/billing_setting"
+	"github.com/mazihua-lgtm/relay-forge/setting/ratio_setting"
 	"github.com/samber/lo"
 
 	"github.com/gin-gonic/gin"

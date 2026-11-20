@@ -3,12 +3,12 @@ package router
 import (
 	"net/http"
 
-	"github.com/QuantumNous/new-api/controller"
-	"github.com/QuantumNous/new-api/middleware"
-	"github.com/QuantumNous/new-api/service/authz"
+	"github.com/mazihua-lgtm/relay-forge/controller"
+	"github.com/mazihua-lgtm/relay-forge/middleware"
+	"github.com/mazihua-lgtm/relay-forge/service/authz"
 
 	// Import oauth package to register providers via init()
-	_ "github.com/QuantumNous/new-api/oauth"
+	_ "github.com/mazihua-lgtm/relay-forge/oauth"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"

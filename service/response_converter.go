@@ -1,9 +1,9 @@
 package service
 
 import (
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
-	"github.com/QuantumNous/new-api/relaykit/relayconvert"
-	"github.com/QuantumNous/new-api/relaykit/types"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 	"github.com/gin-gonic/gin"
 )
 

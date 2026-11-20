@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/MoeForge/moego/ojson"
-	kitutil "github.com/QuantumNous/new-api/relaykit/relayconvert/kitutil"
+	kitutil "github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/kitutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

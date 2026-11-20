@@ -11,12 +11,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/pkg/billingexpr"
-	"github.com/QuantumNous/new-api/pkg/jsplugin"
-	"github.com/QuantumNous/new-api/setting/billing_setting"
-	"github.com/QuantumNous/new-api/setting/operation_setting"
-	"github.com/QuantumNous/new-api/setting/ratio_setting"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/pkg/billingexpr"
+	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
+	"github.com/mazihua-lgtm/relay-forge/setting/billing_setting"
+	"github.com/mazihua-lgtm/relay-forge/setting/operation_setting"
+	"github.com/mazihua-lgtm/relay-forge/setting/ratio_setting"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

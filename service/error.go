@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/QuantumNous/new-api/common"
-	taskdto "github.com/QuantumNous/new-api/dto"
-	"github.com/QuantumNous/new-api/logger"
-	"github.com/QuantumNous/new-api/relaykit/dto"
-	"github.com/QuantumNous/new-api/relaykit/types"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	taskdto "github.com/mazihua-lgtm/relay-forge/dto"
+	"github.com/mazihua-lgtm/relay-forge/logger"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 )
 
 func MidjourneyErrorWrapper(code int, desc string) *taskdto.MidjourneyResponse {

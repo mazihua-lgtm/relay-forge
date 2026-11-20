@@ -3,11 +3,11 @@ package model
 import (
 	"testing"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/constant"
-	"github.com/QuantumNous/new-api/dto"
-	"github.com/QuantumNous/new-api/pkg/jsplugin"
-	kitdto "github.com/QuantumNous/new-api/relaykit/dto"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/constant"
+	"github.com/mazihua-lgtm/relay-forge/dto"
+	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
+	kitdto "github.com/mazihua-lgtm/relay-forge/relaykit/dto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

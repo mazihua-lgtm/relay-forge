@@ -6,7 +6,7 @@ import (
 	"io/fs"
 
 	"github.com/MoeForge/moego/base64"
-	"github.com/QuantumNous/new-api/pkg/jsplugin"
+	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 )
 
 //go:embed tasks

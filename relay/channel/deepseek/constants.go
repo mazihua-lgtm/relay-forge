@@ -1,6 +1,6 @@
 package deepseek
 
-import "github.com/QuantumNous/new-api/constant"
+import "github.com/mazihua-lgtm/relay-forge/constant"
 
 var ModelList = []string{
 	"deepseek-flash", "deepseek-flash-none", "deepseek-flash-low", "deepseek-flash-max",

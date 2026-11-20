@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/QuantumNous/new-api/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/gin-gonic/gin"
 )
 

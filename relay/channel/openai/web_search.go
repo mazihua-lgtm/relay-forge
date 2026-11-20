@@ -1,7 +1,7 @@
 package openai
 
 import (
-	"github.com/QuantumNous/new-api/relaykit/dto"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
 
 	"github.com/MoeForge/moego/ojson"
 )

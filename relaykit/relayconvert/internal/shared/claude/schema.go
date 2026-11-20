@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/MoeForge/moego/ojson"
-	kitutil "github.com/QuantumNous/new-api/relaykit/relayconvert/kitutil"
+	kitutil "github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/kitutil"
 )
 
 // FunctionParametersToInputSchema returns function parameters as a Claude

@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/QuantumNous/new-api/common"
-	pluginruntime "github.com/QuantumNous/new-api/pkg/jsplugin"
-	vertexcore "github.com/QuantumNous/new-api/relay/channel/vertex"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	pluginruntime "github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
+	vertexcore "github.com/mazihua-lgtm/relay-forge/relay/channel/vertex"
 )
 
 type cachedAuth struct {

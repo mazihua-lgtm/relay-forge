@@ -7,10 +7,10 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/middleware"
-	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/service"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/middleware"
+	"github.com/mazihua-lgtm/relay-forge/model"
+	"github.com/mazihua-lgtm/relay-forge/service"
 	"github.com/gin-gonic/gin"
 )
 

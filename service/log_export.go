@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/QuantumNous/new-api/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
 )
 
 const logExportLockTTL = time.Minute

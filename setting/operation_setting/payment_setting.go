@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/Calcium-Ion/go-epay/epay"
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/setting/config"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/setting/config"
 )
 
 type PaymentSetting struct {

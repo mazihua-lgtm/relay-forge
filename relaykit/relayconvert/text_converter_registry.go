@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/QuantumNous/new-api/relaykit/types"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 )
 
 type TextConverterQuality string

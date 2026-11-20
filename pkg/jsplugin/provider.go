@@ -14,8 +14,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/MoeForge/moego/regexp"
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/constant"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/constant"
 )
 
 // CredentialType marks a channel key line that holds a plugin credential.

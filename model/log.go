@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/constant"
-	"github.com/QuantumNous/new-api/logger"
-	"github.com/QuantumNous/new-api/types"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/constant"
+	"github.com/mazihua-lgtm/relay-forge/logger"
+	"github.com/mazihua-lgtm/relay-forge/types"
 
 	"github.com/gin-gonic/gin"
 

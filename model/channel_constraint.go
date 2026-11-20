@@ -3,9 +3,9 @@ package model
 import (
 	"slices"
 
-	"github.com/QuantumNous/new-api/constant"
-	"github.com/QuantumNous/new-api/dto"
-	"github.com/QuantumNous/new-api/pkg/jsplugin"
+	"github.com/mazihua-lgtm/relay-forge/constant"
+	"github.com/mazihua-lgtm/relay-forge/dto"
+	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 )
 
 var filterEvalOrder = []dto.ChannelFilterKind{

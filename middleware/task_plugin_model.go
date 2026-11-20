@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/MoeForge/moego/ojson"
-	"github.com/QuantumNous/new-api/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/gin-gonic/gin"
 )
 

@@ -8,7 +8,7 @@ import (
 	"unicode/utf16"
 
 	"github.com/MoeForge/moego/regexp"
-	"github.com/QuantumNous/new-api/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
 )
 
 var (

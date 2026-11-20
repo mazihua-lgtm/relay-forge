@@ -11,10 +11,10 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/QuantumNous/new-api/common"
-	pluginruntime "github.com/QuantumNous/new-api/pkg/jsplugin"
-	"github.com/QuantumNous/new-api/plugins"
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	pluginruntime "github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
+	"github.com/mazihua-lgtm/relay-forge/plugins"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )

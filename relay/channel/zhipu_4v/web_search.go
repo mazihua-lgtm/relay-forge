@@ -1,11 +1,11 @@
 package zhipu_4v
 
 import (
-	"github.com/QuantumNous/new-api/common"
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
-	"github.com/QuantumNous/new-api/relaykit/dto"
-	"github.com/QuantumNous/new-api/relaykit/relayconvert/convmeta"
-	"github.com/QuantumNous/new-api/relaykit/types"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/convmeta"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 
 	"github.com/MoeForge/moego/ojson"
 )

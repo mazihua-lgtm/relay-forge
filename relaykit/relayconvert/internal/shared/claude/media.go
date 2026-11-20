@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/QuantumNous/new-api/relaykit/dto"
-	relaymedia "github.com/QuantumNous/new-api/relaykit/relayconvert/internal/media"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
+	relaymedia "github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/internal/media"
 )
 
 // imageMediaTypes are the image formats Claude accepts.

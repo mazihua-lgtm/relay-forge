@@ -9,13 +9,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/constant"
-	"github.com/QuantumNous/new-api/logger"
-	"github.com/QuantumNous/new-api/middleware"
-	"github.com/QuantumNous/new-api/relay"
-	"github.com/QuantumNous/new-api/relay/helper"
-	"github.com/QuantumNous/new-api/relaykit/types"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/constant"
+	"github.com/mazihua-lgtm/relay-forge/logger"
+	"github.com/mazihua-lgtm/relay-forge/middleware"
+	"github.com/mazihua-lgtm/relay-forge/relay"
+	"github.com/mazihua-lgtm/relay-forge/relay/helper"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 	"github.com/gin-gonic/gin"
 )
 

@@ -3,8 +3,8 @@ package operation_setting
 import (
 	"strconv"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/setting/config"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/setting/config"
 )
 
 const SystemTaskRetentionDaysOptionKey = "system_task_setting.retention_days"

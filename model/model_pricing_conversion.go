@@ -7,14 +7,14 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/constant"
-	"github.com/QuantumNous/new-api/pkg/jsplugin"
-	"github.com/QuantumNous/new-api/setting/billing_setting"
-	"github.com/QuantumNous/new-api/setting/operation_setting"
-	"github.com/QuantumNous/new-api/setting/ratio_setting"
-	hostreasoning "github.com/QuantumNous/new-api/setting/reasoning"
-	"github.com/QuantumNous/new-api/types"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/constant"
+	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
+	"github.com/mazihua-lgtm/relay-forge/setting/billing_setting"
+	"github.com/mazihua-lgtm/relay-forge/setting/operation_setting"
+	"github.com/mazihua-lgtm/relay-forge/setting/ratio_setting"
+	hostreasoning "github.com/mazihua-lgtm/relay-forge/setting/reasoning"
+	"github.com/mazihua-lgtm/relay-forge/types"
 	"github.com/shopspring/decimal"
 )
 

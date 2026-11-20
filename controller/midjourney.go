@@ -8,13 +8,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/dto"
-	"github.com/QuantumNous/new-api/logger"
-	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/service"
-	"github.com/QuantumNous/new-api/setting"
-	"github.com/QuantumNous/new-api/setting/system_setting"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/dto"
+	"github.com/mazihua-lgtm/relay-forge/logger"
+	"github.com/mazihua-lgtm/relay-forge/model"
+	"github.com/mazihua-lgtm/relay-forge/service"
+	"github.com/mazihua-lgtm/relay-forge/setting"
+	"github.com/mazihua-lgtm/relay-forge/setting/system_setting"
 
 	"github.com/gin-gonic/gin"
 )

@@ -1,4 +1,4 @@
-module github.com/QuantumNous/new-api
+module github.com/mazihua-lgtm/relay-forge
 
 // +heroku goVersion go1.26.10
 go 1.26.10
@@ -170,10 +170,10 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.46.0
 	github.com/MoeForge/moego v0.1.0-alpha.4
 	github.com/MoeForge/moejs v0.1.0
-	github.com/QuantumNous/new-api/relaykit v0.0.0
-	github.com/QuantumNous/new-api/tokenkit v0.0.0
+	github.com/mazihua-lgtm/relay-forge/relaykit v0.0.0
+	github.com/mazihua-lgtm/relay-forge/tokenkit v0.0.0
 )
 
-replace github.com/QuantumNous/new-api/relaykit => ./relaykit
+replace github.com/mazihua-lgtm/relay-forge/relaykit => ./relaykit
 
-replace github.com/QuantumNous/new-api/tokenkit => ./tokenkit
+replace github.com/mazihua-lgtm/relay-forge/tokenkit => ./tokenkit

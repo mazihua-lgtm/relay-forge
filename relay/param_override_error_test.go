@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"testing"
 
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
-	"github.com/QuantumNous/new-api/relaykit/types"
-	"github.com/QuantumNous/new-api/service"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
+	"github.com/mazihua-lgtm/relay-forge/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

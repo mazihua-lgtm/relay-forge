@@ -17,9 +17,9 @@ import (
 
 	"github.com/MoeForge/moego/regexp"
 	"github.com/MoeForge/moejs"
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/constant"
-	"github.com/QuantumNous/new-api/logger"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/constant"
+	"github.com/mazihua-lgtm/relay-forge/logger"
 )
 
 const (

@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/QuantumNous/new-api/pkg/jsplugin"
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
-	"github.com/QuantumNous/new-api/relaykit/dto"
-	"github.com/QuantumNous/new-api/service"
+	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
+	"github.com/mazihua-lgtm/relay-forge/service"
 )
 
 // MaxBalanceResponseBytes bounds a reply parseBalance reads.

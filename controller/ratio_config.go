@@ -3,9 +3,9 @@ package controller
 import (
 	"net/http"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/setting/billing_setting"
-	"github.com/QuantumNous/new-api/setting/ratio_setting"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/setting/billing_setting"
+	"github.com/mazihua-lgtm/relay-forge/setting/ratio_setting"
 
 	"github.com/gin-gonic/gin"
 )

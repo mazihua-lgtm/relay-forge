@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/QuantumNous/new-api/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/glebarez/sqlite"
 
 	"github.com/stretchr/testify/assert"

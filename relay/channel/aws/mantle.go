@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/QuantumNous/new-api/relay/channel"
-	"github.com/QuantumNous/new-api/relay/channel/claude"
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/mazihua-lgtm/relay-forge/relay/channel"
+	"github.com/mazihua-lgtm/relay-forge/relay/channel/claude"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
 
 	"github.com/MoeForge/moego/ojson"
 	"github.com/aws/aws-sdk-go-v2/aws"

@@ -3,11 +3,11 @@ package service
 import (
 	"testing"
 
-	"github.com/QuantumNous/new-api/common"
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
-	"github.com/QuantumNous/new-api/relaykit/dto"
-	"github.com/QuantumNous/new-api/setting/operation_setting"
-	"github.com/QuantumNous/new-api/tokenkit"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
+	"github.com/mazihua-lgtm/relay-forge/setting/operation_setting"
+	"github.com/mazihua-lgtm/relay-forge/tokenkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

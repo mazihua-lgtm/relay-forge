@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"path"
 
-	"github.com/QuantumNous/new-api/controller"
-	"github.com/QuantumNous/new-api/middleware"
-	"github.com/QuantumNous/new-api/service/authz"
+	"github.com/mazihua-lgtm/relay-forge/controller"
+	"github.com/mazihua-lgtm/relay-forge/middleware"
+	"github.com/mazihua-lgtm/relay-forge/service/authz"
 	"github.com/gin-gonic/gin"
 )
 

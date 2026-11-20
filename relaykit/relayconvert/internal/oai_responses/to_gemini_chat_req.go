@@ -7,14 +7,14 @@ import (
 
 	"context"
 
-	"github.com/QuantumNous/new-api/relaykit/dto"
-	"github.com/QuantumNous/new-api/relaykit/relayconvert/convmeta"
-	"github.com/QuantumNous/new-api/relaykit/relayconvert/internal/convdiag"
-	relaymedia "github.com/QuantumNous/new-api/relaykit/relayconvert/internal/media"
-	sharedgemini "github.com/QuantumNous/new-api/relaykit/relayconvert/internal/shared/gemini"
-	kitutil "github.com/QuantumNous/new-api/relaykit/relayconvert/kitutil"
-	"github.com/QuantumNous/new-api/relaykit/relayconvert/reasoning"
-	"github.com/QuantumNous/new-api/relaykit/types"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/convmeta"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/internal/convdiag"
+	relaymedia "github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/internal/media"
+	sharedgemini "github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/internal/shared/gemini"
+	kitutil "github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/kitutil"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/reasoning"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 )
 
 func OpenAIResponsesRequestToGeminiChat(c context.Context, req *dto.OpenAIResponsesRequest, info convmeta.Meta) (*dto.GeminiChatRequest, error) {

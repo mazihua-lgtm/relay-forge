@@ -1,6 +1,6 @@
 package system_setting
 
-import "github.com/QuantumNous/new-api/common"
+import "github.com/mazihua-lgtm/relay-forge/common"
 
 const (
 	DefaultTaskArtifactInvalidRateLimitPerMinute = 60

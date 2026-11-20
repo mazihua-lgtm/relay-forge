@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/setting/config"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/setting/config"
 )
 
 const defaultGeminiSafetySetting = "OFF"

@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/dto"
-	pluginruntime "github.com/QuantumNous/new-api/pkg/jsplugin"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/dto"
+	pluginruntime "github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 )
 
 const (

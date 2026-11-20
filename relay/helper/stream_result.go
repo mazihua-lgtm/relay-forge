@@ -3,8 +3,8 @@ package helper
 import (
 	"errors"
 
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
-	"github.com/QuantumNous/new-api/relaykit/types"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 )
 
 // StreamResult is passed to each dataHandler invocation, providing methods

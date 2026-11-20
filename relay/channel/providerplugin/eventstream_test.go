@@ -7,7 +7,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/QuantumNous/new-api/pkg/jsplugin"
+	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

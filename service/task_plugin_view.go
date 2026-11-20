@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/dto"
-	"github.com/QuantumNous/new-api/model"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/dto"
+	"github.com/mazihua-lgtm/relay-forge/model"
 )
 
 // BuildTaskPluginView converts a persisted task into the deliberately narrow

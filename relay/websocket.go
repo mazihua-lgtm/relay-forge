@@ -5,11 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/QuantumNous/new-api/pkg/wsmanager"
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
-	"github.com/QuantumNous/new-api/relaykit/dto"
-	"github.com/QuantumNous/new-api/relaykit/types"
-	"github.com/QuantumNous/new-api/service"
+	"github.com/mazihua-lgtm/relay-forge/pkg/wsmanager"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
+	"github.com/mazihua-lgtm/relay-forge/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"

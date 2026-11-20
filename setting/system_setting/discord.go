@@ -1,6 +1,6 @@
 package system_setting
 
-import "github.com/QuantumNous/new-api/setting/config"
+import "github.com/mazihua-lgtm/relay-forge/setting/config"
 
 type DiscordSettings struct {
 	Enabled      bool   `json:"enabled"`

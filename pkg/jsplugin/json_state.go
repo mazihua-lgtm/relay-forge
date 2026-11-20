@@ -8,7 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/MoeForge/moejs/engine"
-	"github.com/QuantumNous/new-api/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
 )
 
 const (

@@ -6,10 +6,10 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/pkg/jsplugin"
-	builtinplugins "github.com/QuantumNous/new-api/plugins"
-	"github.com/QuantumNous/new-api/relay"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
+	builtinplugins "github.com/mazihua-lgtm/relay-forge/plugins"
+	"github.com/mazihua-lgtm/relay-forge/relay"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

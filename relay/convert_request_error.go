@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
-	kitreasoning "github.com/QuantumNous/new-api/relaykit/relayconvert/reasoning"
-	"github.com/QuantumNous/new-api/relaykit/types"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
+	kitreasoning "github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/reasoning"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 	"github.com/gin-gonic/gin"
 )
 

@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/QuantumNous/new-api/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
 
 	"github.com/gin-gonic/gin"
 )

@@ -3,7 +3,7 @@ package oauth
 import (
 	"context"
 
-	"github.com/QuantumNous/new-api/model"
+	"github.com/mazihua-lgtm/relay-forge/model"
 	"github.com/gin-gonic/gin"
 )
 

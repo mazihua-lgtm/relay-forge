@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/model"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/model"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

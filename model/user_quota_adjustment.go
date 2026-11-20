@@ -3,7 +3,7 @@ package model
 import (
 	"errors"
 
-	"github.com/QuantumNous/new-api/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )

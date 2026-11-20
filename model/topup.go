@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"maps"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/logger"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/logger"
 
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"

@@ -18,10 +18,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/pkg/jsplugin"
-	"github.com/QuantumNous/new-api/pkg/requestpatch"
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
+	"github.com/mazihua-lgtm/relay-forge/pkg/requestpatch"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
 	"github.com/tidwall/gjson"
 )
 

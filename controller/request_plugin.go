@@ -9,12 +9,12 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/pkg/jsplugin"
-	"github.com/QuantumNous/new-api/relay/helper"
-	"github.com/QuantumNous/new-api/relay/requestplugin"
-	"github.com/QuantumNous/new-api/setting/request_plugin_setting"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/model"
+	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
+	"github.com/mazihua-lgtm/relay-forge/relay/helper"
+	"github.com/mazihua-lgtm/relay-forge/relay/requestplugin"
+	"github.com/mazihua-lgtm/relay-forge/setting/request_plugin_setting"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"

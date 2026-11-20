@@ -4,10 +4,10 @@ import (
 	"maps"
 	"strings"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/setting/operation_setting"
-	hostreasoning "github.com/QuantumNous/new-api/setting/reasoning"
-	"github.com/QuantumNous/new-api/types"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/setting/operation_setting"
+	hostreasoning "github.com/mazihua-lgtm/relay-forge/setting/reasoning"
+	"github.com/mazihua-lgtm/relay-forge/types"
 )
 
 // from songquanpeng/one-api

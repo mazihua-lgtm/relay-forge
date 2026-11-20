@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/QuantumNous/new-api/relaykit/dto"
-	"github.com/QuantumNous/new-api/relaykit/relayconvert/convmeta"
-	"github.com/QuantumNous/new-api/relaykit/relayconvert/internal/convdiag"
-	relaymedia "github.com/QuantumNous/new-api/relaykit/relayconvert/internal/media"
-	kitutil "github.com/QuantumNous/new-api/relaykit/relayconvert/kitutil"
-	"github.com/QuantumNous/new-api/relaykit/relayconvert/reasoning"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/convmeta"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/internal/convdiag"
+	relaymedia "github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/internal/media"
+	kitutil "github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/kitutil"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/reasoning"
 )
 
 func ClaudeMessagesRequestToOpenAIResponses(ctx context.Context, claudeRequest dto.ClaudeRequest, info convmeta.Meta) (*dto.OpenAIResponsesRequest, error) {

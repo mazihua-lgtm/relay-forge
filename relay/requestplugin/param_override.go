@@ -7,9 +7,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/MoeForge/moego/regexp"
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/pkg/jsplugin"
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
 )
 
 var rejectCodePattern = regexp.MustCompile(`^[a-z0-9_.-]{1,64}$`)

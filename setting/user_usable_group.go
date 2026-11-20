@@ -5,7 +5,7 @@ import (
 	"maps"
 	"sync"
 
-	"github.com/QuantumNous/new-api/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
 )
 
 // The default descriptions are English source keys that the web console

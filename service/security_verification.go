@@ -8,10 +8,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/oauth"
-	"github.com/QuantumNous/new-api/setting/system_setting"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/model"
+	"github.com/mazihua-lgtm/relay-forge/oauth"
+	"github.com/mazihua-lgtm/relay-forge/setting/system_setting"
 	"gorm.io/gorm"
 )
 

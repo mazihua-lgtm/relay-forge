@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/QuantumNous/new-api/model"
+	"github.com/mazihua-lgtm/relay-forge/model"
 )
 
 const (

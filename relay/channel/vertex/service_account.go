@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
-	"github.com/QuantumNous/new-api/service"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
+	"github.com/mazihua-lgtm/relay-forge/service"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/sync/singleflight"

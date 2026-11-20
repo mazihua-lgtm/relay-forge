@@ -3,8 +3,8 @@ package common
 import (
 	"testing"
 
-	"github.com/QuantumNous/new-api/constant"
-	"github.com/QuantumNous/new-api/setting/model_setting"
+	"github.com/mazihua-lgtm/relay-forge/constant"
+	"github.com/mazihua-lgtm/relay-forge/setting/model_setting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

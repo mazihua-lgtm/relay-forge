@@ -15,7 +15,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/MoeForge/moego/regexp"
-	"github.com/QuantumNous/new-api/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/tidwall/gjson"
 )
 

@@ -1,7 +1,7 @@
 package ratio_setting
 
 import (
-	"github.com/QuantumNous/new-api/types"
+	"github.com/mazihua-lgtm/relay-forge/types"
 )
 
 const (

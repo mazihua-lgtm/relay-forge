@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/QuantumNous/new-api/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"

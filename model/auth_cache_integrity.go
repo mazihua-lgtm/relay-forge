@@ -4,7 +4,7 @@ import (
 	"crypto/hmac"
 	"time"
 
-	"github.com/QuantumNous/new-api/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
 )
 
 // authCacheMAC binds cache metadata to its purpose and Redis key. Only

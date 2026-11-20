@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/MoeForge/moego/regexp"
-	"github.com/QuantumNous/new-api/setting/model_setting"
+	"github.com/mazihua-lgtm/relay-forge/setting/model_setting"
 )
 
 // Chat→Responses upgrade policy is host routing logic (it decides *whether*

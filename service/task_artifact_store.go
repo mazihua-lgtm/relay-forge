@@ -5,9 +5,9 @@ import (
 	"errors"
 	"io"
 
-	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/setting/system_setting"
-	"github.com/QuantumNous/new-api/types"
+	"github.com/mazihua-lgtm/relay-forge/model"
+	"github.com/mazihua-lgtm/relay-forge/setting/system_setting"
+	"github.com/mazihua-lgtm/relay-forge/types"
 	"github.com/gin-gonic/gin"
 )
 

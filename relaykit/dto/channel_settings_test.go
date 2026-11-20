@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/MoeForge/moego/regexp"
-	"github.com/QuantumNous/new-api/relaykit/types"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

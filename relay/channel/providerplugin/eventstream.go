@@ -8,7 +8,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/QuantumNous/new-api/pkg/jsplugin"
+	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 )
 
 // eventStreamContentType is the media type of an AWS event stream.

@@ -4,7 +4,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/QuantumNous/new-api/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
 
 	"gorm.io/gorm"
 )

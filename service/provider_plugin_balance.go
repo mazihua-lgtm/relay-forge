@@ -6,9 +6,9 @@ import (
 	"slices"
 	"strconv"
 
-	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/pkg/jsplugin"
-	"github.com/QuantumNous/new-api/setting/operation_setting"
+	"github.com/mazihua-lgtm/relay-forge/model"
+	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
+	"github.com/mazihua-lgtm/relay-forge/setting/operation_setting"
 )
 
 // PluginBalanceUSD is a balance result in USD for the balance column: USD as it is,

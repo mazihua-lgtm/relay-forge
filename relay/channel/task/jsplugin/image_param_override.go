@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"maps"
 
-	"github.com/QuantumNous/new-api/common"
-	pluginruntime "github.com/QuantumNous/new-api/pkg/jsplugin"
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	pluginruntime "github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )

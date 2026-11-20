@@ -1,6 +1,6 @@
 package service
 
-import "github.com/QuantumNous/new-api/pkg/wsmanager"
+import "github.com/mazihua-lgtm/relay-forge/pkg/wsmanager"
 
 const ChannelDisabledCloseReason = "channel disabled or deleted"
 

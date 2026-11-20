@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/QuantumNous/new-api/setting/operation_setting"
-	"github.com/QuantumNous/new-api/setting/system_setting"
+	"github.com/mazihua-lgtm/relay-forge/setting/operation_setting"
+	"github.com/mazihua-lgtm/relay-forge/setting/system_setting"
 )
 
 func GetCallbackAddress() string {
