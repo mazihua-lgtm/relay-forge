@@ -1,4 +1,4 @@
-module github.com/QuantumNous/new-api/tokenkit
+module github.com/mazihua-lgtm/relay-forge/tokenkit
 
 go 1.26
 
