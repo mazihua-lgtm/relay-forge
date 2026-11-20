@@ -12,11 +12,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/model"
 	"github.com/mazihua-lgtm/relay-forge/service"
-	"github.com/gin-gonic/gin"
 	"github.com/prometheus/common/expfmt"
 )
 

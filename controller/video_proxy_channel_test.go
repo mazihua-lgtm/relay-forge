@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/model"
@@ -15,7 +16,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
 	"github.com/mazihua-lgtm/relay-forge/service"
 	"github.com/mazihua-lgtm/relay-forge/setting/system_setting"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

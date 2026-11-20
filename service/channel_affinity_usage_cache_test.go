@@ -6,9 +6,9 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
 

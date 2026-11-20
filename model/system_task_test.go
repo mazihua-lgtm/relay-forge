@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/glebarez/sqlite"
+	"github.com/mazihua-lgtm/relay-forge/common"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

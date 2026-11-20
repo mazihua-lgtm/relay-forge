@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/casbin/casbin/v2"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/model"
-	"github.com/casbin/casbin/v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

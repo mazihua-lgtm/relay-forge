@@ -3,10 +3,10 @@ package common
 import (
 	"context"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/logger"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
-	"github.com/gin-gonic/gin"
 )
 
 const maxConversionDiagnostics = 32

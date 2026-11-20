@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/logger"
 	pluginruntime "github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 	"github.com/mazihua-lgtm/relay-forge/relay/helper"
-	"github.com/gin-gonic/gin"
 )
 
 // submitEventStream is how one SSE submission is read: client, when set, is

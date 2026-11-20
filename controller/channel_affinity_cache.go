@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/service"
-	"github.com/gin-gonic/gin"
 )
 
 func GetChannelAffinityCacheStats(c *gin.Context) {

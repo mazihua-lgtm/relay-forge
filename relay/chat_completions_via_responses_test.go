@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	openaichannel "github.com/mazihua-lgtm/relay-forge/relay/channel/openai"
@@ -17,7 +18,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert"
 	relaytypes "github.com/mazihua-lgtm/relay-forge/relaykit/types"
 	hosttypes "github.com/mazihua-lgtm/relay-forge/types"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

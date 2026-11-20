@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/MoeForge/moego/ojson"
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/logger"
@@ -16,7 +17,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 	"github.com/mazihua-lgtm/relay-forge/service"
-	"github.com/gin-gonic/gin"
 )
 
 func GeminiResponsesHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Response) (*dto.Usage, *types.NewAPIError) {

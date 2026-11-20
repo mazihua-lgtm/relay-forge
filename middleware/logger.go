@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
-	"github.com/gin-gonic/gin"
 )
 
 const RouteTagKey = "route_tag"

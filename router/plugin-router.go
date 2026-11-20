@@ -13,6 +13,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/controller"
@@ -20,7 +21,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/middleware"
 	"github.com/mazihua-lgtm/relay-forge/model"
 	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
-	"github.com/gin-gonic/gin"
 )
 
 type pluginDispatchStateKey struct{}

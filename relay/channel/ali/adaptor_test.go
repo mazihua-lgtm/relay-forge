@@ -10,13 +10,13 @@ import (
 	"testing"
 
 	"github.com/MoeForge/moego/ojson"
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
 	"github.com/mazihua-lgtm/relay-forge/relay/constant"
 	relayhelper "github.com/mazihua-lgtm/relay-forge/relay/helper"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

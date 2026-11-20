@@ -6,13 +6,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/dto"
 	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 	builtinplugins "github.com/mazihua-lgtm/relay-forge/plugins"
 	taskplugin "github.com/mazihua-lgtm/relay-forge/relay/channel/task/jsplugin"
 	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
+	"github.com/go-redis/redis/v8"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/i18n"
 	"github.com/mazihua-lgtm/relay-forge/middleware"
@@ -20,8 +22,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
 	"github.com/mazihua-lgtm/relay-forge/service"
 	"github.com/mazihua-lgtm/relay-forge/service/authz"
-	"github.com/alicebob/miniredis/v2"
-	"github.com/go-redis/redis/v8"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"

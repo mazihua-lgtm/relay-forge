@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/pkg/billingexpr"
 	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
@@ -18,7 +19,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/relay"
 	taskplugin "github.com/mazihua-lgtm/relay-forge/relay/channel/task/jsplugin"
 	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

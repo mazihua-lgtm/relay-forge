@@ -9,9 +9,9 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
 	"github.com/mazihua-lgtm/relay-forge/service"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

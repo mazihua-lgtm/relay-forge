@@ -15,6 +15,8 @@ import (
 	"testing"
 	"testing/iotest"
 
+	"github.com/gin-gonic/gin"
+	"github.com/glebarez/sqlite"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/dto"
@@ -25,8 +27,6 @@ import (
 	kitdto "github.com/mazihua-lgtm/relay-forge/relaykit/dto"
 	"github.com/mazihua-lgtm/relay-forge/service"
 	"github.com/mazihua-lgtm/relay-forge/setting/system_setting"
-	"github.com/gin-gonic/gin"
-	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"

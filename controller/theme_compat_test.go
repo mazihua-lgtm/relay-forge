@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/gin-gonic/gin"
+	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

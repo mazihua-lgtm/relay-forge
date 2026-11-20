@@ -11,13 +11,13 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/model"
 	pluginruntime "github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
 	"github.com/mazihua-lgtm/relay-forge/service"
-	"github.com/gin-gonic/gin"
 )
 
 // A key line of a task plugin channel may be a credential its plugin's login

@@ -13,6 +13,8 @@ import (
 	"testing"
 
 	"github.com/MoeForge/moego/ojson"
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
@@ -21,8 +23,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 	"github.com/mazihua-lgtm/relay-forge/setting/model_setting"
-	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"io"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/model"
 	"github.com/mazihua-lgtm/relay-forge/setting/system_setting"
 	"github.com/mazihua-lgtm/relay-forge/types"
-	"github.com/gin-gonic/gin"
 )
 
 // StoredArtifactRef describes a persisted artifact object. No reference is

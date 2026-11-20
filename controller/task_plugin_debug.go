@@ -1,13 +1,13 @@
 package controller
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/dto"
 	"github.com/mazihua-lgtm/relay-forge/logger"
 	"github.com/mazihua-lgtm/relay-forge/model"
 	pluginruntime "github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 	"github.com/mazihua-lgtm/relay-forge/relay"
 	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
-	"github.com/gin-gonic/gin"
 )
 
 // taskPluginSubmitDiagnostics keeps plugin-only lifecycle logging out of the

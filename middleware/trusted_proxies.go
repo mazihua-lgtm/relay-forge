@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/gin-gonic/gin"
+	"github.com/mazihua-lgtm/relay-forge/common"
 )
 
 func ConfigureTrustedProxies(engine *gin.Engine) error {

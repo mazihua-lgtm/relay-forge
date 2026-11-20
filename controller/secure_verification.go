@@ -6,6 +6,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/gin-gonic/gin"
+	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/logger"
 	"github.com/mazihua-lgtm/relay-forge/middleware"
@@ -14,8 +16,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/service"
 	passkeysvc "github.com/mazihua-lgtm/relay-forge/service/passkey"
 	"github.com/mazihua-lgtm/relay-forge/setting/system_setting"
-	"github.com/gin-gonic/gin"
-	"github.com/go-webauthn/webauthn/protocol"
 )
 
 func GetVerificationMethods(c *gin.Context) {

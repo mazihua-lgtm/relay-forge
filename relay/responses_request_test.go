@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/i18n"
@@ -18,7 +19,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/setting/config"
 	"github.com/mazihua-lgtm/relay-forge/setting/model_setting"
 	"github.com/mazihua-lgtm/relay-forge/setting/request_plugin_setting"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"

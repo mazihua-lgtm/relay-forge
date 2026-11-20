@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/i18n"
@@ -14,7 +15,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 	"github.com/mazihua-lgtm/relay-forge/setting/config"
 	"github.com/mazihua-lgtm/relay-forge/setting/request_plugin_setting"
-	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"

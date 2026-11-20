@@ -22,6 +22,7 @@ import (
 
 	"github.com/MoeForge/moego/base64"
 	"github.com/MoeForge/moego/regexp"
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/dto"
@@ -33,7 +34,6 @@ import (
 	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
 	kitdto "github.com/mazihua-lgtm/relay-forge/relaykit/dto"
 	"github.com/mazihua-lgtm/relay-forge/service"
-	"github.com/gin-gonic/gin"
 )
 
 type requestDescriptor struct {

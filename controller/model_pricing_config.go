@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/model"
-	"github.com/gin-gonic/gin"
 )
 
 func GetModelPricingConfig(c *gin.Context) {

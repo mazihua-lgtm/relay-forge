@@ -8,6 +8,7 @@ import (
 	"math"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/logger"
@@ -18,7 +19,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
 	"github.com/mazihua-lgtm/relay-forge/setting/ratio_setting"
 	"github.com/mazihua-lgtm/relay-forge/types"
-	"github.com/gin-gonic/gin"
 )
 
 // LogTaskConsumption 记录任务消费日志和统计信息（仅记录，不涉及实际扣费）。

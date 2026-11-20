@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/glebarez/sqlite"
 	"github.com/go-redis/redis/v8"
+	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"

@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-contrib/gzip"
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/controller"
 	"github.com/mazihua-lgtm/relay-forge/middleware"
-	"github.com/gin-contrib/gzip"
-	"github.com/gin-gonic/gin"
 )
 
 // WebAssets holds the embedded dashboard frontend assets.

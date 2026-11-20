@@ -3,8 +3,8 @@ package controller
 import (
 	"net/http"
 
-	"github.com/mazihua-lgtm/relay-forge/service"
 	"github.com/gin-gonic/gin"
+	"github.com/mazihua-lgtm/relay-forge/service"
 )
 
 func GetRankings(c *gin.Context) {

@@ -17,6 +17,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/MoeForge/moego/ojson"
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/dto"
@@ -29,7 +30,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/relay/requestplugin"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 	"github.com/mazihua-lgtm/relay-forge/service"
-	"github.com/gin-gonic/gin"
 )
 
 const contextKeyTaskPluginEndpointModel = "task_plugin_endpoint_model_request"

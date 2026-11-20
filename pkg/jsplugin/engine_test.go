@@ -29,12 +29,12 @@ import (
 	"weak"
 
 	"github.com/MoeForge/moejs"
-	"github.com/mazihua-lgtm/relay-forge/common"
-	"github.com/mazihua-lgtm/relay-forge/constant"
-	"github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/kitutil"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/constant"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/kitutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

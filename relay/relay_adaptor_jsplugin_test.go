@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	pluginruntime "github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 	jspluginadaptor "github.com/mazihua-lgtm/relay-forge/relay/channel/task/jsplugin"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

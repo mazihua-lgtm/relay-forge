@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/logger"
 	relaychannel "github.com/mazihua-lgtm/relay-forge/relay/channel"
@@ -15,7 +16,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 	"github.com/mazihua-lgtm/relay-forge/setting/model_setting"
-	"github.com/gin-gonic/gin"
 )
 
 // PrepareResponsesRequest applies the same model, conversion and channel rules

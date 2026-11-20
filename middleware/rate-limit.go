@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/mazihua-lgtm/relay-forge/common"
-	"github.com/mazihua-lgtm/relay-forge/logger"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/logger"
 )
 
 const redisRateLimitNamespace = "rateLimit:v2"

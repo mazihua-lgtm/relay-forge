@@ -1,9 +1,9 @@
 package router
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/controller"
 	"github.com/mazihua-lgtm/relay-forge/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 // SetTaskRouter registers the generic task-plugin API surface.

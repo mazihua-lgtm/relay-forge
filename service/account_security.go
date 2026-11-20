@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"html"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/i18n"
 	"github.com/mazihua-lgtm/relay-forge/model"
 	"github.com/mazihua-lgtm/relay-forge/oauth"
 	"github.com/mazihua-lgtm/relay-forge/setting/system_setting"
-	"github.com/gin-gonic/gin"
 )
 
 func UnbindAccountOAuth(identity AuthIdentity, providerID int) error {

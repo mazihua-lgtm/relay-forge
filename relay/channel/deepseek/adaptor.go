@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/relay/channel"
 	"github.com/mazihua-lgtm/relay-forge/relay/channel/claude"
@@ -18,7 +19,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 	"github.com/mazihua-lgtm/relay-forge/setting/model_setting"
 	"github.com/mazihua-lgtm/relay-forge/setting/reasoning"
-	"github.com/gin-gonic/gin"
 )
 
 type Adaptor struct {

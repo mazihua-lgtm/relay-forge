@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/dto"
@@ -13,7 +14,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/model"
 	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
-	"github.com/gin-gonic/gin"
 )
 
 func GetChannelConstraints(c *gin.Context) *dto.ChannelConstraints {

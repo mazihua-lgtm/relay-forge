@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/dto"
@@ -14,7 +15,6 @@ import (
 	pluginruntime "github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 	builtinplugins "github.com/mazihua-lgtm/relay-forge/plugins"
 	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
-	"github.com/gin-gonic/gin"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/openai/openai-go/responses"

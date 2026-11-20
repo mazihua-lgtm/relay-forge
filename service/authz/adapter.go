@@ -3,10 +3,10 @@ package authz
 import (
 	"fmt"
 
-	"github.com/mazihua-lgtm/relay-forge/common"
-	"github.com/mazihua-lgtm/relay-forge/model"
 	casbinmodel "github.com/casbin/casbin/v2/model"
 	"github.com/casbin/casbin/v2/persist"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

@@ -11,11 +11,11 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	pluginruntime "github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 	"github.com/mazihua-lgtm/relay-forge/plugins"
 	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
 

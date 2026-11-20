@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/model"
@@ -23,7 +24,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/service"
 	"github.com/mazihua-lgtm/relay-forge/setting/operation_setting"
 	"github.com/mazihua-lgtm/relay-forge/setting/ratio_setting"
-	"github.com/gin-gonic/gin"
 	"github.com/samber/lo"
 )
 

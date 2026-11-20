@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	pluginruntime "github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 	_ "github.com/mazihua-lgtm/relay-forge/plugins"
@@ -45,7 +46,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/relay/channel/xunfei"
 	"github.com/mazihua-lgtm/relay-forge/relay/channel/zhipu"
 	"github.com/mazihua-lgtm/relay-forge/relay/channel/zhipu_4v"
-	"github.com/gin-gonic/gin"
 )
 
 func GetAdaptor(apiType int) channel.Adaptor {

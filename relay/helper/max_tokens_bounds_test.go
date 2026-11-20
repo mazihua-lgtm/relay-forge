@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	relayconstant "github.com/mazihua-lgtm/relay-forge/relay/constant"
 	"github.com/gin-gonic/gin"
+	relayconstant "github.com/mazihua-lgtm/relay-forge/relay/constant"
 	"github.com/stretchr/testify/require"
 )
 

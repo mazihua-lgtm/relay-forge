@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/casbin/casbin/v2"
 	casbinmodel "github.com/casbin/casbin/v2/model"
+	"github.com/mazihua-lgtm/relay-forge/common"
 	"gorm.io/gorm"
 )
 

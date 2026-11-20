@@ -1,10 +1,10 @@
 package router
 
 import (
-	"github.com/mazihua-lgtm/relay-forge/controller"
-	"github.com/mazihua-lgtm/relay-forge/middleware"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+	"github.com/mazihua-lgtm/relay-forge/controller"
+	"github.com/mazihua-lgtm/relay-forge/middleware"
 )
 
 func SetDashboardRouter(router *gin.Engine) {

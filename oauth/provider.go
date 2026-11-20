@@ -3,8 +3,8 @@ package oauth
 import (
 	"context"
 
-	"github.com/mazihua-lgtm/relay-forge/model"
 	"github.com/gin-gonic/gin"
+	"github.com/mazihua-lgtm/relay-forge/model"
 )
 
 // Provider defines the interface for OAuth providers

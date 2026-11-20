@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
 	"github.com/gin-gonic/gin"
+	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gin-gonic/gin"
 	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
 	"github.com/mazihua-lgtm/relay-forge/relay/requestplugin"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
@@ -12,7 +13,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 	"github.com/mazihua-lgtm/relay-forge/setting/model_setting"
 	hostreasoning "github.com/mazihua-lgtm/relay-forge/setting/reasoning"
-	"github.com/gin-gonic/gin"
 )
 
 // ApplyReasoningModelSuffix parses host-private reasoning suffixes from the

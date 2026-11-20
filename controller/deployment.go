@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/pkg/ionet"
-	"github.com/gin-gonic/gin"
 )
 
 func getIoAPIKey(c *gin.Context) (string, bool) {

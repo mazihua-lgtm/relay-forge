@@ -3,11 +3,11 @@ package router
 import (
 	"fmt"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/controller"
 	"github.com/mazihua-lgtm/relay-forge/middleware"
 	pluginruntime "github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
-	"github.com/gin-gonic/gin"
 )
 
 func SetTaskPluginProtocolRouter(router *gin.Engine) {

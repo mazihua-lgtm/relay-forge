@@ -8,11 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	relaycommon "github.com/mazihua-lgtm/relay-forge/relay/common"
 	relayconstant "github.com/mazihua-lgtm/relay-forge/relay/constant"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
 

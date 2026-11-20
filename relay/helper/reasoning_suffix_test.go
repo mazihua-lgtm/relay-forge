@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/MoeForge/moego/ojson"
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/pkg/jsplugin"
@@ -20,7 +21,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/setting/model_setting"
 	hostreasoning "github.com/mazihua-lgtm/relay-forge/setting/reasoning"
 	"github.com/mazihua-lgtm/relay-forge/setting/request_plugin_setting"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

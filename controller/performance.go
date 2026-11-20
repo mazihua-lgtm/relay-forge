@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/logger"
-	"github.com/gin-gonic/gin"
 )
 
 // PerformanceStats 性能统计信息

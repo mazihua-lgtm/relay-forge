@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mazihua-lgtm/relay-forge/common"
-	"github.com/mazihua-lgtm/relay-forge/setting/system_setting"
 	"github.com/go-redis/redis/v8"
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/setting/system_setting"
 	"github.com/pquerna/otp/totp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

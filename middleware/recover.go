@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/gin-gonic/gin"
+	"github.com/mazihua-lgtm/relay-forge/common"
 )
 
 func RelayPanicRecover() gin.HandlerFunc {

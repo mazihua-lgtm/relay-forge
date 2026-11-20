@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/alicebob/miniredis/v2"
 	"github.com/go-redis/redis/v8"
+	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

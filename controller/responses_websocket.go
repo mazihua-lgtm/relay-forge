@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/logger"
@@ -16,7 +17,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/relay"
 	"github.com/mazihua-lgtm/relay-forge/relay/helper"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
-	"github.com/gin-gonic/gin"
 )
 
 type responsesWSRequestContextKey struct{}

@@ -3,8 +3,8 @@ package controller
 import (
 	"net/http"
 
-	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/gin-gonic/gin"
+	"github.com/mazihua-lgtm/relay-forge/common"
 )
 
 // etagVersionPublicContent namespaces the public-content ETag; bump it when

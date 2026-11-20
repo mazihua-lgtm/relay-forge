@@ -3,8 +3,8 @@ package middleware
 import (
 	"context"
 
-	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/gin-gonic/gin"
+	"github.com/mazihua-lgtm/relay-forge/common"
 )
 
 func RequestId() func(c *gin.Context) {

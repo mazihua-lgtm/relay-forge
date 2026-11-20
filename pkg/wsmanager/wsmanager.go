@@ -8,8 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/go-redis/redis/v8"
+	"github.com/mazihua-lgtm/relay-forge/common"
 )
 
 const (

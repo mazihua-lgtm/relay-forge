@@ -3,11 +3,11 @@ package controller
 import (
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/mazihua-lgtm/relay-forge/model"
 	"github.com/mazihua-lgtm/relay-forge/setting/operation_setting"
-	"github.com/gin-gonic/gin"
 )
 
 type Setup struct {

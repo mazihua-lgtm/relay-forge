@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/go-redis/redis/v8"
+	"github.com/mazihua-lgtm/relay-forge/common"
 )
 
 //go:embed lua/rate_limit.lua

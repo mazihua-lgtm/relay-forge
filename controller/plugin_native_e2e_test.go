@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/glebarez/sqlite"
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/constant"
 	taskdto "github.com/mazihua-lgtm/relay-forge/dto"
@@ -26,8 +28,6 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/setting/config"
 	"github.com/mazihua-lgtm/relay-forge/setting/ratio_setting"
 	"github.com/mazihua-lgtm/relay-forge/setting/request_plugin_setting"
-	"github.com/gin-gonic/gin"
-	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"

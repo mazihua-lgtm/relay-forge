@@ -6,8 +6,8 @@ import (
 	"io"
 
 	"github.com/MoeForge/moego/json"
-	kitutil "github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/kitutil"
 	"github.com/gin-gonic/gin/binding"
+	kitutil "github.com/mazihua-lgtm/relay-forge/relaykit/relayconvert/kitutil"
 )
 
 type RawMessage = json.RawMessage

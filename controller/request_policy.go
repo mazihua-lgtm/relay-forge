@@ -3,8 +3,8 @@ package controller
 import (
 	"net/http"
 
-	"github.com/mazihua-lgtm/relay-forge/model"
 	"github.com/gin-gonic/gin"
+	"github.com/mazihua-lgtm/relay-forge/model"
 )
 
 func GetRequestPolicy(c *gin.Context) {

@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/MoeForge/moego/ojson"
-	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
 	"github.com/go-playground/validator/v10"
+	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

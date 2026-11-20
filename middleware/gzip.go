@@ -5,10 +5,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/mazihua-lgtm/relay-forge/constant"
 	"github.com/andybalholm/brotli"
 	"github.com/gin-gonic/gin"
 	"github.com/klauspost/compress/zstd"
+	"github.com/mazihua-lgtm/relay-forge/constant"
 )
 
 type readCloser struct {

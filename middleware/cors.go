@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/mazihua-lgtm/relay-forge/common"
 )
 
 func CORS() gin.HandlerFunc {
