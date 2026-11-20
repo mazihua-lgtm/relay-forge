@@ -50,6 +50,17 @@ func TestPluginLoginRoutesUseExpectedPermissions(t *testing.T) {
 	assertChannelRoutePermission(t, http.MethodGet, "/:id/plugin_credentials", authz.ChannelRead, controller.GetPluginCredentials)
 }
 
+func TestChannelHealthProbeRouteRequiresOperatePermission(t *testing.T) {
+	assertChannelRoutePermission(t, http.MethodPost, "/probe", authz.ChannelOperate, controller.TriggerHealthProbe)
+
+	gin.SetMode(gin.TestMode)
+	engine := gin.New()
+	registerChannelRoutes(engine.Group("/api"))
+	recorder := httptest.NewRecorder()
+	engine.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, "/api/channel/probe", nil))
+	assert.Equal(t, http.StatusUnauthorized, recorder.Code, "an anonymous caller must not start a sweep")
+}
+
 func TestChannelStatusRoutesRegisterWithoutConflict(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()

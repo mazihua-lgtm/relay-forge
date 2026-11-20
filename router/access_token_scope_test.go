@@ -4,18 +4,25 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"net/http"
+	"net/http/httptest"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mazihua-lgtm/relay-forge/common"
+	"github.com/mazihua-lgtm/relay-forge/i18n"
 	"github.com/mazihua-lgtm/relay-forge/middleware"
+	"github.com/mazihua-lgtm/relay-forge/model"
 	"github.com/mazihua-lgtm/relay-forge/service"
 	"github.com/mazihua-lgtm/relay-forge/service/authz"
 	"github.com/gin-gonic/gin"
+	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 )
 
 // accessTokenExemptRoutes are /api routes that never reach dashboard
@@ -198,5 +205,61 @@ func TestAccessTokenVerificationScopesAreAllListed(t *testing.T) {
 	for _, scope := range scopes {
 		_, listed := service.AccessTokenVerificationScope(scope)
 		assert.True(t, listed, "verification scope %s has no access token rule", scope)
+	}
+}
+
+// The earnings reports expose the operator's margin. Through the real router and
+// AdminAuth chain an anonymous caller and a common user are turned away, and an
+// administrator receives each report.
+func TestEarningsRoutesRequireAdmin(t *testing.T) {
+	require.NoError(t, i18n.Init())
+	previousDB, previousLogDB := model.DB, model.LOG_DB
+	previousType, previousRedis, previousSecret := common.MainDatabaseType(), common.RedisEnabled, common.SessionSecret
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	sqlDB.SetMaxOpenConns(1)
+	require.NoError(t, db.AutoMigrate(&model.User{}, &model.UserSession{}, &model.AuditLog{}, &model.UserAccessToken{}, &model.Option{}, &model.Log{}))
+	model.DB, model.LOG_DB = db, db
+	common.SetMainDatabaseType(common.DatabaseTypeSQLite)
+	common.RedisEnabled = false
+	common.SessionSecret = "earnings-router-test-secret"
+	require.NoError(t, model.EnsureLegacyAccessTokenRetireAt(time.Now().Unix()))
+	t.Cleanup(func() {
+		model.DB, model.LOG_DB = previousDB, previousLogDB
+		common.SetMainDatabaseType(previousType)
+		common.RedisEnabled, common.SessionSecret = previousRedis, previousSecret
+		_ = sqlDB.Close()
+	})
+	engine := newAccessTokenScopeTestEngine(t)
+
+	bearer := func(name string, role int) string {
+		t.Helper()
+		user := model.User{Username: name, Password: "password-placeholder", Role: role, Status: common.UserStatusEnabled, Group: "default", AuthVersion: 1, AffCode: name + "-aff"}
+		require.NoError(t, model.DB.Create(&user).Error)
+		bundle, err := service.CreateLoginSession(user.Id, "password", "127.0.0.1", "earnings-router-test")
+		require.NoError(t, err)
+		return bundle.AccessToken
+	}
+	get := func(path string, token string) *httptest.ResponseRecorder {
+		t.Helper()
+		request := httptest.NewRequest(http.MethodGet, path, nil)
+		if token != "" {
+			request.Header.Set("Authorization", "Bearer "+token)
+		}
+		recorder := httptest.NewRecorder()
+		engine.ServeHTTP(recorder, request)
+		return recorder
+	}
+	commonToken := bearer("earnings-common", common.RoleCommonUser)
+	adminToken := bearer("earnings-admin", common.RoleAdminUser)
+
+	for _, path := range []string{"/api/admin/earnings/overview", "/api/admin/earnings/by-channel", "/api/admin/earnings/by-model"} {
+		assert.Equal(t, http.StatusUnauthorized, get(path, "").Code, "anonymous %s", path)
+		assert.Equal(t, http.StatusForbidden, get(path, commonToken).Code, "common user %s", path)
+		recorder := get(path, adminToken)
+		require.Equal(t, http.StatusOK, recorder.Code, "administrator %s: %s", path, recorder.Body.String())
+		assert.Contains(t, recorder.Body.String(), `"success":true`, path)
 	}
 }
