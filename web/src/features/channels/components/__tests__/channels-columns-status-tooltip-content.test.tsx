@@ -75,3 +75,58 @@ test('keeps the long string inside the status tooltip is wrapped when show', asy
     'wrap-anywhere'
   )
 })
+
+function renderStatusCell(channel: Channel) {
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <ChannelsProvider>
+        <ExampleAutoDisabledStatusCell channel={channel} />
+      </ChannelsProvider>
+    </QueryClientProvider>
+  )
+}
+
+test('a degraded channel shows its probe reason in the status tooltip', async () => {
+  const channelItem = channelSchema.parse({
+    id: 2,
+    type: 1,
+    key: 'test-key',
+    name: 'Degraded-Channel-Item',
+    status: 4,
+    created_time: 1,
+    test_time: 0,
+    response_time: 0,
+    balance_updated_time: 0,
+    other_info: JSON.stringify({
+      status_reason: 'answered with an empty reply',
+      status_time: 1_700_000_000,
+    }),
+  })
+  const user = userEvent.setup()
+
+  renderStatusCell(channelItem)
+
+  await user.hover(screen.getByText('Degraded'))
+
+  expect(
+    await screen.findByText('answered with an empty reply', { exact: false })
+  ).toBeVisible()
+})
+
+test('a degraded channel without a recorded reason still shows its badge', () => {
+  const channelItem = channelSchema.parse({
+    id: 3,
+    type: 1,
+    key: 'test-key',
+    name: 'Degraded-Without-Reason',
+    status: 4,
+    created_time: 1,
+    test_time: 0,
+    response_time: 0,
+    balance_updated_time: 0,
+  })
+
+  renderStatusCell(channelItem)
+
+  expect(screen.getByText('Degraded')).toBeVisible()
+})

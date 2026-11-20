@@ -62,6 +62,7 @@ import { truncateText } from '@/lib/utils'
 
 import { getCodexUsage, updateChannelBalance } from '../api'
 import {
+  CHANNEL_STATUS,
   CHANNEL_STATUS_CONFIG,
   CHANNEL_TYPE_TASK_PLUGIN,
   CHANNEL_TYPE_VLLM,
@@ -1044,8 +1045,12 @@ export function useChannelsColumns(
               ? `${t(config.label)} (${enabledCount}/${keySize})`
               : t(config.label)
 
-          // Auto-disabled: show reason and time tooltip
-          if (status === 3) {
+          // Auto-disabled and degraded channels were changed by the system:
+          // show the recorded reason and time.
+          if (
+            status === CHANNEL_STATUS.AUTO_DISABLED ||
+            status === CHANNEL_STATUS.DEGRADED
+          ) {
             let statusReason = ''
             let statusTime = ''
             try {

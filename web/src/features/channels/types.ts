@@ -87,6 +87,10 @@ export const channelSchema = z.object({
   status_code_mapping: z.string().nullish(),
   priority: z.number().nullish(),
   auto_ban: z.number().nullish(),
+  /** What the operator pays upstream, as a multiple of the model base price; 0 or unset means not set. */
+  cost_ratio: z.number().nullish(),
+  /** Consecutive failed health probes; written by the server only. */
+  error_count: z.number().nullish(),
   other_info: z.string().default(''),
   tag: z.string().nullish(),
   setting: z.string().nullish(),
@@ -403,6 +407,7 @@ export interface ChannelFormData {
   weight?: number
   test_model?: string
   auto_ban?: number
+  cost_ratio?: number
   status: number
   status_code_mapping?: string
   tag?: string

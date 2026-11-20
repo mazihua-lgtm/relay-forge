@@ -755,6 +755,23 @@ export async function testAllChannels(): Promise<{
 }
 
 /**
+ * Start one health-probe sweep of the channels in the background. The server
+ * answers at once: `started` is false when a sweep was already running.
+ */
+export async function probeChannels(): Promise<{
+  success: boolean
+  message?: string
+  started?: boolean
+}> {
+  const res = await api.post(
+    '/api/channel/probe',
+    undefined,
+    channelActionConfig()
+  )
+  return res.data
+}
+
+/**
  * Update balance for all enabled channels. The server queues the update as a
  * system task and answers with its id.
  */

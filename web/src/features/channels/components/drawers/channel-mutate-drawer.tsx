@@ -27,6 +27,7 @@ import {
   Puzzle,
   ChevronDown,
   ClipboardPaste,
+  Coins,
   Loader2,
   Server,
   Sparkles,
@@ -214,6 +215,7 @@ import { ChannelPluginExtensions } from '../channel-plugin-extensions'
 import { ChannelQuickOptions } from '../channel-quick-options'
 import { ChannelTypeLogo } from '../channel-type-badge'
 import { useChannels } from '../channels-provider'
+import { CostRatioInput } from '../cost-ratio-input'
 import { AdvancedCustomEditorDialog } from '../dialogs/advanced-custom-editor-dialog'
 import { ConfigureModelsDialog } from '../dialogs/configure-models-dialog'
 import {
@@ -2435,6 +2437,41 @@ export function ChannelMutateDrawer({
                 onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
               />
             </FormControl>
+          </FormItem>
+        )}
+      />
+    </div>
+  )
+
+  // Feeds the real upstream cost in Earnings; it never affects routing.
+  const costFields = (
+    <div
+      role='group'
+      aria-label={t('Upstream cost')}
+      className={channelConfigurationBlockClassName(
+        configuration.blocks.costRatio,
+        'flex flex-col gap-4'
+      )}
+    >
+      <SubHeading
+        title={t('Upstream cost')}
+        status={configuration.blocks.costRatio}
+        icon={<Coins className='h-3.5 w-3.5' />}
+        iconTone='success'
+      />
+      <FormField
+        control={form.control}
+        name='cost_ratio'
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t('Purchase ratio')}</FormLabel>
+            <FormControl>
+              <CostRatioInput {...field} />
+            </FormControl>
+            <FormDescription>
+              {t(FIELD_DESCRIPTIONS.COST_RATIO)}
+            </FormDescription>
+            <FormMessage />
           </FormItem>
         )}
       />
@@ -5008,6 +5045,7 @@ export function ChannelMutateDrawer({
           <>
             {redirectPanelActive ? redirectPanelNotice : modelMappingFields}
             {routingFields}
+            {costFields}
           </>
         }
         request={

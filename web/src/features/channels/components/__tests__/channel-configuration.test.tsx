@@ -1597,6 +1597,124 @@ test('restoring routing defaults clears the configured indicator for both the bl
   expect(within(block).getByRole('img', { name: 'Configured' })).toBeVisible()
 })
 
+test('the purchase ratio is entered with the routing settings and saved as typed', async () => {
+  const put = vi
+    .spyOn(api, 'put')
+    .mockResolvedValue({ data: { success: true } })
+  const user = userEvent.setup()
+  render(<ConfigurationHarness currentRow={editingChannel} />)
+  await screen.findByDisplayValue('Existing channel')
+  await user.click(screen.getByRole('tab', { name: /Routing & Mapping/ }))
+  const block = screen.getByRole('group', { name: 'Upstream cost' })
+  expect(
+    within(block).queryByRole('img', { name: 'Configured' })
+  ).not.toBeInTheDocument()
+  const ratio = within(block).getByLabelText('Purchase ratio')
+  expect(ratio).toHaveDisplayValue('')
+  fireEvent.change(ratio, { target: { value: '0.4' } })
+  expect(within(block).getByRole('img', { name: 'Configured' })).toBeVisible()
+  await user.click(screen.getByRole('button', { name: 'Update Channel' }))
+  await waitFor(() => expect(put).toHaveBeenCalled())
+  expect(put.mock.calls[0]?.[1]).toMatchObject({ id: 42, cost_ratio: 0.4 })
+})
+
+test('a saved purchase ratio is shown, and setting it back to 0 saves the 0', async () => {
+  editingChannel = { ...editingChannel, cost_ratio: 0.4 }
+  const put = vi
+    .spyOn(api, 'put')
+    .mockResolvedValue({ data: { success: true } })
+  const user = userEvent.setup()
+  render(<ConfigurationHarness currentRow={editingChannel} />)
+  await screen.findByDisplayValue('Existing channel')
+  await user.click(screen.getByRole('tab', { name: /Routing & Mapping/ }))
+  const block = screen.getByRole('group', { name: 'Upstream cost' })
+  const ratio = within(block).getByLabelText('Purchase ratio')
+  expect(ratio).toHaveValue(0.4)
+  expect(within(block).getByRole('img', { name: 'Configured' })).toBeVisible()
+  fireEvent.change(ratio, { target: { value: '0' } })
+  expect(
+    within(block).queryByRole('img', { name: 'Configured' })
+  ).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Update Channel' }))
+  await waitFor(() => expect(put).toHaveBeenCalled())
+  expect(put.mock.calls[0]?.[1]).toHaveProperty('cost_ratio', 0)
+})
+
+test('a saved purchase ratio can be replaced by typing a new one', async () => {
+  editingChannel = { ...editingChannel, cost_ratio: 0.4 }
+  const put = vi
+    .spyOn(api, 'put')
+    .mockResolvedValue({ data: { success: true } })
+  const user = userEvent.setup()
+  render(<ConfigurationHarness currentRow={editingChannel} />)
+  await screen.findByDisplayValue('Existing channel')
+  await user.click(screen.getByRole('tab', { name: /Routing & Mapping/ }))
+  const ratio = screen.getByLabelText('Purchase ratio')
+  await user.clear(ratio)
+  await user.type(ratio, '0.45')
+  expect(ratio).toHaveDisplayValue('0.45')
+  await user.click(screen.getByRole('button', { name: 'Update Channel' }))
+  await waitFor(() => expect(put).toHaveBeenCalled())
+  expect(put.mock.calls[0]?.[1]).toMatchObject({ id: 42, cost_ratio: 0.45 })
+})
+
+test('a purchase ratio above 100 is refused from any category and nothing is saved', async () => {
+  const put = vi
+    .spyOn(api, 'put')
+    .mockResolvedValue({ data: { success: true } })
+  const user = userEvent.setup()
+  render(<ConfigurationHarness currentRow={editingChannel} />)
+  await screen.findByDisplayValue('Existing channel')
+  await user.click(screen.getByRole('tab', { name: /Routing & Mapping/ }))
+  fireEvent.change(screen.getByLabelText('Purchase ratio'), {
+    target: { value: '150' },
+  })
+  await user.click(screen.getByRole('tab', { name: /Connection & Models/ }))
+  await user.click(screen.getByRole('button', { name: 'Update Channel' }))
+  await waitFor(() =>
+    expect(screen.getByLabelText('Purchase ratio')).toHaveFocus()
+  )
+  expect(
+    screen.getByRole('tab', { name: /Routing & Mapping/ })
+  ).toHaveAttribute('aria-selected', 'true')
+  expect(
+    screen.getByText('Purchase ratio must be between 0 and 100')
+  ).toBeVisible()
+  expect(put).not.toHaveBeenCalled()
+})
+
+test('an operator without sensitive write permission can still set the purchase ratio', async () => {
+  useAuthStore.setState({
+    auth: {
+      ...originalAuth,
+      user: {
+        id: 10,
+        username: 'operator',
+        role: ROLE.ADMIN,
+        permissions: {
+          admin_permissions: {
+            channel: { read: true, write: true, operate: true },
+          },
+        },
+      },
+    },
+  })
+  const put = vi
+    .spyOn(api, 'put')
+    .mockResolvedValue({ data: { success: true } })
+  const user = userEvent.setup()
+  render(<ConfigurationHarness currentRow={editingChannel} />)
+  await screen.findByDisplayValue('Existing channel')
+  await user.click(screen.getByRole('tab', { name: /Routing & Mapping/ }))
+  const ratio = screen.getByLabelText('Purchase ratio')
+  expect(ratio).toBeEnabled()
+  fireEvent.change(ratio, { target: { value: '0.25' } })
+  await user.click(screen.getByRole('button', { name: 'Update Channel' }))
+  await waitFor(() => expect(put).toHaveBeenCalled())
+  expect(put.mock.calls[0]?.[1]).toMatchObject({ id: 42, cost_ratio: 0.25 })
+  expect(put.mock.calls[0]?.[1]).not.toHaveProperty('key')
+})
+
 test('channel request processing plugins save in their order and a deleted instance stays removable', async () => {
   const instance = (id: string, name: string): RequestPluginInstance => ({
     id,

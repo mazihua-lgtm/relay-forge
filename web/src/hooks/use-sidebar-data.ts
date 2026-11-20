@@ -33,6 +33,7 @@ import {
   Settings,
   ShieldCheck,
   Ticket,
+  TrendingUp,
   User,
   Users,
   Wallet,
@@ -147,6 +148,11 @@ export function useSidebarData(badges: SidebarBadges = {}): SidebarData {
             title: t('Users'),
             url: '/users',
             icon: Users,
+          },
+          {
+            title: t('Earnings'),
+            url: '/earnings',
+            icon: TrendingUp,
           },
           {
             title: t('Redemption Codes'),

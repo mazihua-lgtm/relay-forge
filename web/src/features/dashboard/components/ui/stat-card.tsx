@@ -46,6 +46,8 @@ interface StatCardProps {
   sparkline?: number[]
   sparklineVariant?: StatCardSparklineVariant
   details?: StatCardDetail[]
+  /** Keep `details` on small screens, where they are hidden by default. */
+  detailsOnMobile?: boolean
   tone?: StatCardTone
   loading?: boolean
   error?: boolean
@@ -325,7 +327,15 @@ export function StatCard(props: StatCardProps) {
 
       {valueContent}
 
-      <div className='hidden sm:block'>{visualization}</div>
+      <div
+        className={
+          props.detailsOnMobile && props.details?.length
+            ? 'block'
+            : 'hidden sm:block'
+        }
+      >
+        {visualization}
+      </div>
     </div>
   )
 }

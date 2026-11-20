@@ -38,6 +38,7 @@ import {
   fixChannelAbilities,
   editTagChannels,
   testAllChannels,
+  probeChannels,
   updateAllChannelsBalance,
   getChannelBalanceTask,
   type ChannelBalanceTask,
@@ -657,6 +658,38 @@ export async function handleTestAllChannels(
     }
   } catch (error) {
     handleServerError(error, i18next.t('Failed to test all channels'))
+  }
+}
+
+/**
+ * Run one health-probe sweep now. The sweep talks to every upstream and takes a
+ * while, so this only reports that it started; results show up in the channel
+ * status and the failure count as the probe finishes.
+ */
+export async function handleProbeChannels(): Promise<void> {
+  try {
+    const response = await probeChannels()
+    if (!response.success) {
+      handleServerError(
+        response,
+        i18next.t('Failed to start the channel health probe')
+      )
+      return
+    }
+    if (response.started === false) {
+      toast.info(i18next.t('A channel health probe is already running.'))
+      return
+    }
+    toast.success(
+      i18next.t(
+        'Channel health probe started. Refresh in a minute to see the results.'
+      )
+    )
+  } catch (error) {
+    handleServerError(
+      error,
+      i18next.t('Failed to start the channel health probe')
+    )
   }
 }
 

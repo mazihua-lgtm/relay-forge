@@ -20,6 +20,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import {
   Plus,
+  HeartPulse,
   MoreHorizontal,
   Settings2,
   Trash2,
@@ -63,6 +64,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import {
   handleDeleteAllDisabled,
   handleFixAbilities,
+  handleProbeChannels,
   handleTestAllChannels,
   handleUpdateAllBalances,
 } from '../lib'
@@ -220,6 +222,17 @@ export function ChannelsPrimaryButtons() {
               {t('Test All Channels')}
               <DropdownMenuShortcut>
                 <TestTube className='h-4 w-4' />
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onClick={() => {
+                void handleProbeChannels()
+              }}
+            >
+              {t('Run Health Probe')}
+              <DropdownMenuShortcut>
+                <HeartPulse className='h-4 w-4' />
               </DropdownMenuShortcut>
             </DropdownMenuItem>
 

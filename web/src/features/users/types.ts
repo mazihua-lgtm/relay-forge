@@ -50,6 +50,8 @@ export const userSchema = z.object({
   aff_count: z.number().optional(),
   aff_quota: z.number().optional(),
   aff_history_quota: z.number().optional(),
+  /** Share of the invitees' spending credited to this user, as a fraction from 0 to 1. */
+  commission_rate: z.number().optional(),
   inviter_id: z.number().optional(),
   linux_do_id: z.string().optional(),
   status: userStatusSchema,

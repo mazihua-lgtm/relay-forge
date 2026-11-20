@@ -146,6 +146,20 @@ export async function deleteUser(
 }
 
 /**
+ * Set the share of their invitees' spending a user earns as quota on every
+ * request. `rate` is a fraction from 0 to 1; the server rejects anything else.
+ */
+export async function updateUserCommission(
+  id: number,
+  rate: number
+): Promise<ApiResponse> {
+  const res = await api.patch(`/api/user/${id}/commission`, {
+    commission_rate: rate,
+  })
+  return res.data
+}
+
+/**
  * Manage user (promote, demote, enable, disable, delete); requires an
  * `admin.user.manage` proof (`admin.user.delete` for deletion)
  */

@@ -232,6 +232,8 @@ export const CHANNEL_STATUS = {
   ENABLED: 1,
   MANUAL_DISABLED: 2,
   AUTO_DISABLED: 3,
+  /** Set by the health probe: reachable, but answering with empty or evasive output. */
+  DEGRADED: 4,
 } as const
 
 export const CHANNEL_STATUS_LABELS = {
@@ -239,6 +241,7 @@ export const CHANNEL_STATUS_LABELS = {
   [CHANNEL_STATUS.ENABLED]: 'Enabled',
   [CHANNEL_STATUS.MANUAL_DISABLED]: 'Disabled',
   [CHANNEL_STATUS.AUTO_DISABLED]: 'Auto Disabled',
+  [CHANNEL_STATUS.DEGRADED]: 'Degraded',
 } as const
 
 export const CHANNEL_STATUS_OPTIONS = [
@@ -263,6 +266,10 @@ export const CHANNEL_STATUS_CONFIG = {
   [CHANNEL_STATUS.AUTO_DISABLED]: {
     variant: 'warning' as const,
     label: 'Auto Disabled',
+  },
+  [CHANNEL_STATUS.DEGRADED]: {
+    variant: 'warning' as const,
+    label: 'Degraded',
   },
 }
 
@@ -357,6 +364,7 @@ export const ERROR_MESSAGES = {
   REQUIRED_MODELS: 'Models are required',
   REQUIRED_GROUP: 'Group is required',
   INVALID_JSON: 'Invalid JSON format',
+  INVALID_COST_RATIO: 'Purchase ratio must be between 0 and 100',
   INVALID_MODEL_MAPPING: 'Invalid model mapping format',
   INVALID_PROXY:
     'Proxy address must use HTTP, HTTPS, SOCKS5, or SOCKS5H and include a valid host',
@@ -487,6 +495,8 @@ export const FIELD_DESCRIPTIONS = {
   WEIGHT: 'Used for load balancing. Higher weight = more requests',
   TEST_MODEL: 'Model to use when testing channel connectivity',
   AUTO_BAN: 'Automatically disable channel on repeated failures',
+  COST_RATIO:
+    'What you pay upstream for this channel, as a multiple of the model base price (the price before the user group ratio). For example, 0.4 if you buy at 40% of it. Used for the real cost in Earnings; leave 0 to estimate.',
   STATUS_CODE_MAPPING: 'Map response status codes (JSON format)',
   TAG: 'Group channels by tag for batch operations',
   REMARK: 'Internal notes (not shown to users)',

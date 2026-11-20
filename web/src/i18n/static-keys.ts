@@ -934,4 +934,18 @@ export const STATIC_I18N_KEYS = [
   'Channel priorities changed. Refresh and try again.',
   'Invalid channel priority move',
   'Channel priority is outside the sortable range',
+  // Earnings, purchase ratio and channel health labels passed to t at runtime.
+  'Last 7 days',
+  'Last 30 days',
+  'Current month',
+  'Last month',
+  'Recorded',
+  'Estimated',
+  'Mixed',
+  'Cost recorded from the channel purchase ratio when each request was logged.',
+  'No purchase ratio was recorded, so the cost is estimated from the charge.',
+  'Part of the cost was recorded from purchase ratios, the rest is estimated from the charge.',
+  'Degraded',
+  'Purchase ratio must be between 0 and 100',
+  'What you pay upstream for this channel, as a multiple of the model base price (the price before the user group ratio). For example, 0.4 if you buy at 40% of it. Used for the real cost in Earnings; leave 0 to estimate.',
 ] as const

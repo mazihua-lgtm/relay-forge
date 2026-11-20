@@ -98,6 +98,7 @@ import {
   transformUserToFormDefaults,
 } from '../lib'
 import type { User } from '../types'
+import { UserCommissionSection } from './user-commission-section'
 import { UserQuotaDialog } from './user-quota-dialog'
 import { useUsers } from './users-provider'
 
@@ -118,6 +119,8 @@ export function UsersMutateDrawer({
   const currentUser = useAuthStore((s) => s.auth.user)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [quotaDialogOpen, setQuotaDialogOpen] = useState(false)
+  // Saved referral commission rate (a fraction); the section saves it itself.
+  const [commissionRate, setCommissionRate] = useState(0)
   // Matrix as loaded from the server; an unchanged matrix is not resubmitted so
   // routine edits of an administrator do not require step-up verification.
   const loadedPermissions = useRef<AdminPermissionMatrix | undefined>(undefined)
@@ -151,6 +154,7 @@ export function UsersMutateDrawer({
         .then((result) => {
           if (result.success && result.data) {
             loadedPermissions.current = result.data.admin_permissions
+            setCommissionRate(result.data.commission_rate ?? 0)
             form.reset(transformUserToFormDefaults(result.data))
           } else {
             handleServerError(result, t('Failed to load'))
@@ -266,6 +270,7 @@ export function UsersMutateDrawer({
       const result = requireServerSuccess(await getUser(currentRow.id))
       if (result.success && result.data) {
         loadedPermissions.current = result.data.admin_permissions
+        setCommissionRate(result.data.commission_rate ?? 0)
         form.reset(transformUserToFormDefaults(result.data))
       }
       triggerRefresh()
@@ -511,6 +516,16 @@ export function UsersMutateDrawer({
                     )}
                   />
                 </SideDrawerSection>
+              )}
+
+              {/* Referral commission (Update only; it saves on its own) */}
+              {isUpdate && currentRow && (
+                <UserCommissionSection
+                  key={`${currentRow.id}:${commissionRate}`}
+                  userId={currentRow.id}
+                  rate={commissionRate}
+                  onSaved={setCommissionRate}
+                />
               )}
 
               {canEditAdminPermissions &&

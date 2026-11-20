@@ -52,6 +52,7 @@ const CONFIGURATION_BLOCKS = {
     section: 'routing',
     fields: ['priority', 'weight', 'test_model', 'auto_ban'],
   },
+  costRatio: { section: 'routing', fields: ['cost_ratio'] },
   overrideRules: {
     section: 'request',
     fields: [
@@ -164,6 +165,7 @@ export function getChannelConfigurationState(
       values.test_model?.trim() ||
       (values.auto_ban ?? 1) !== 1
     ),
+    costRatio: Boolean(values.cost_ratio),
     overrideRules:
       hasConfiguredJson(values.status_code_mapping) ||
       hasConfiguredJson(values.param_override) ||
