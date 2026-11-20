@@ -1,0 +1,90 @@
+name: Upstream check
+
+# Weekly and read-only: has QuantumNous/new-api moved since the last sync?
+# If it has, one issue says what came. When it has not (any more), that issue is
+# closed. A check that itself fails turns the run red instead of reading as
+# "nothing new". The logic is scripts/upstream-sync/check.py; RELAY-FORGE.md,
+# "同步上游", says what to do with the answer.
+on:
+  schedule:
+    - cron: '17 1 * * 1' # Mondays 01:17 UTC, 09:17 in Beijing
+  workflow_dispatch:
+    inputs:
+      since:
+        description: 'Testing: use this upstream commit as the start instead of the recorded one'
+        required: false
+        type: string
+      dry_run:
+        description: 'Testing: print the report only and leave the issues alone'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: upstream-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      UPSTREAM_PROXY: ''
+      UPSTREAM_FETCH_ARGS: '--filter=blob:none'
+    steps:
+      - name: Get this repository and its upstream-sync branch
+        run: |
+          set -euo pipefail
+          gh auth setup-git
+          git clone --depth 1 "https://github.com/${GITHUB_REPOSITORY}.git" repo
+          cd repo
+          git fetch --depth 1 origin upstream-sync:refs/heads/upstream-sync
+          git remote add upstream https://github.com/QuantumNous/new-api.git
+
+      - name: Check
+        id: check
+        working-directory: repo
+        env:
+          SINCE: ${{ inputs.since }}
+        run: |
+          set +e
+          python3 -I scripts/upstream-sync/check.py ${SINCE:+--since "$SINCE"} --report-file "$RUNNER_TEMP/report.md"
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          if [ -f "$RUNNER_TEMP/report.md" ]; then cat "$RUNNER_TEMP/report.md" >> "$GITHUB_STEP_SUMMARY"; fi
+          exit 0
+
+      - name: Open, update or close the issue
+        if: steps.check.outputs.code == '0' || steps.check.outputs.code == '10'
+        env:
+          CODE: ${{ steps.check.outputs.code }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          number=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 100 --json number,title \
+            --jq '[.[] | select(.title | startswith("[upstream-check]"))][0].number // empty')
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "dry run: the issue (${number:-none open}) is left alone"
+            exit 0
+          fi
+          title='[upstream-check] 上游有新提交，待同步'
+          if [ "$CODE" = "10" ]; then
+            if [ -n "$number" ]; then
+              gh issue edit "$number" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$RUNNER_TEMP/report.md"
+            else
+              gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$RUNNER_TEMP/report.md"
+            fi
+          elif [ -n "$number" ]; then
+            gh issue close "$number" --repo "$GITHUB_REPOSITORY" --comment "上游已经没有未同步的新提交，自动关闭。"
+          fi
+
+      - name: Fail the run if the check itself failed
+        if: steps.check.outputs.code != '0' && steps.check.outputs.code != '10'
+        run: |
+          echo "the check failed (exit status ${{ steps.check.outputs.code }}); see the Check step"
+          exit 1

@@ -97,6 +97,12 @@ main 比 `upstream-sync` 多出来的只有 relay-forge 自己的东西：新功
 
 每个上游分支提交的消息里有一行 `Upstream-Commit: <上游完整提交号>`，记录它对应上游的哪个提交。
 
+### 自动检查
+
+`scripts/upstream-sync/check.py` 只读地回答「上游自上次同步以来有没有新提交」：拉上游 `main`，列出新提交（带 ⚠ 的可能与安全有关，先读具体改动），点出同步前要重点审的文件（依赖、工作流、脚本、许可证）。起点取自 `upstream-sync` 分支顶端的 `Upstream-Commit:`。退出码：0 没有新提交，10 有新提交，2 检查本身失败（失败不会被当成「没有新提交」）。本机运行 `python3 -I scripts/upstream-sync/check.py`；它的测试不联网：`python3 -I scripts/upstream-sync/test_check.py`。动手改 relay-forge 之前先本机跑一次也很便宜。
+
+GitHub 上的 `.github/workflows/upstream-check.yml` 每周一北京时间 09:17 左右跑同一个脚本：有新提交就开一个标题以 `[upstream-check]` 开头的 issue 写明来了什么（之后几轮只更新正文，不重复通知）；同步完成后下一轮自动关掉它；检查本身失败时这次运行会变红。手动跑：`gh workflow run upstream-check.yml`（测试用参数 `-f since=<上游提交号> -f dry_run=true`）。通知走的是 GitHub 的 issue 和失败运行提醒，**要在 GitHub 的通知设置里确认邮件或手机推送开着**。
+
 ### 步骤
 
 取上游、审、改写、整树核对，是 2026-11-20 第一次同步里实际跑过的。「在临时工作树里提交」和「`git merge upstream-sync`」用一次演练验证过：在临时工作树里模拟了一个上游新提交，`git merge` 自动找到合并基，无冲突，只带进改动的文件。第一次同步本身因为基线要从零建，是用 `git commit-tree` 手工指定合并基的。
