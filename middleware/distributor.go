@@ -50,6 +50,17 @@ func Distribute() func(c *gin.Context) {
 			abortWithOpenAiMessage(c, invalidRequestStatus(err), i18n.T(c, i18n.MsgDistributorInvalidRequest, map[string]any{"Error": err.Error()}))
 			return
 		}
+		// Tag the request with the reseller's own end-user id, and refuse it
+		// early when that user is suspended for this model. Without the header
+		// nothing changes: enforcement stays at the key level as before.
+		endUser := service.NormalizeEndUser(c.Request.Header.Get(service.EndUserHeader))
+		if endUser != "" {
+			common.SetContextKey(c, constant.ContextKeyEndUser, endUser)
+			if service.IsEndUserBlocked(c.GetInt("token_id"), modelRequest.Model, endUser) {
+				abortWithOpenAiMessage(c, http.StatusForbidden, i18n.T(c, i18n.MsgDistributorEndUserBlocked, map[string]any{"Model": modelRequest.Model}))
+				return
+			}
+		}
 		_, pinned, _ := constraints.ResolvedPin()
 		if !pinned {
 			// Select a channel for the user

@@ -26,6 +26,7 @@ const (
 	MsgDistributorInvalidChannelId             = "distributor.invalid_channel_id"
 	MsgDistributorChannelDisabled              = "distributor.channel_disabled"
 	MsgDistributorTokenNoModelAccess           = "distributor.token_no_model_access"
+	MsgDistributorEndUserBlocked               = "distributor.end_user_blocked"
 	MsgDistributorTokenModelForbidden          = "distributor.token_model_forbidden"
 	MsgDistributorModelNameRequired            = "distributor.model_name_required"
 	MsgDistributorInvalidPlayground            = "distributor.invalid_playground_request"

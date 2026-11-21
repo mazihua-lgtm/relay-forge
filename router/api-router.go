@@ -318,6 +318,15 @@ func SetApiRouter(router *gin.Engine) {
 			clientRoute.DELETE("/:id", controller.DeleteClient)
 		}
 
+		// End-user enforcement records: which key × model × end user is
+		// suspended because upstream policy refusals were attributed to it.
+		endUserRoute := apiRouter.Group("/end_user")
+		endUserRoute.Use(middleware.AdminAuth())
+		{
+			endUserRoute.GET("/blocks", controller.GetEndUserBlocks)
+			endUserRoute.DELETE("/blocks", controller.ClearEndUserBlock)
+		}
+
 		usageRoute := apiRouter.Group("/usage")
 		usageRoute.Use(middleware.CORS(), middleware.CriticalRateLimit())
 		{

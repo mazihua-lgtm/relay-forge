@@ -73,6 +73,10 @@ func ProcessChannelError(c *gin.Context, channelError types.ChannelError, err *t
 		})
 	}
 
+	// Attribute policy refusals to the end user named on the request, so one
+	// user's refusals suspend that user rather than the whole key.
+	RecordEndUserRefusalFromContext(c, err)
+
 	RecordRelayErrorLog(c, channelError.ChannelId, err, relayInfo)
 }
 
