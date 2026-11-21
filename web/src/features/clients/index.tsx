@@ -1,0 +1,263 @@
+/*
+Copyright (C) 2023-2026 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Plus } from 'lucide-react'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
+
+import { ConfirmDialog } from '@/components/confirm-dialog'
+import { EmptyState } from '@/components/empty-state'
+import { ErrorState } from '@/components/error-state'
+import { LoadingState } from '@/components/loading-state'
+import { StatusBadge } from '@/components/status-badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { formatQuotaWithCurrency } from '@/lib/currency'
+import { handleServerError } from '@/lib/handle-server-error'
+import { requireServerSuccess } from '@/lib/server-error-message'
+
+import { createClient, deleteClient, getClients, updateClient } from './api'
+import { ClientFormDialog } from './components/client-form-dialog'
+import {
+  CLIENT_STATUS_DISABLED,
+  CLIENT_STATUS_ENABLED,
+  type ClientUsage,
+} from './types'
+
+export function Clients() {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [createOpen, setCreateOpen] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<ClientUsage | null>(null)
+
+  const clientsQuery = useQuery({
+    queryKey: ['clients'],
+    queryFn: async () => {
+      const response = requireServerSuccess(await getClients())
+      return response.data ?? []
+    },
+  })
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ['clients'] })
+
+  const createMutation = useMutation({
+    mutationFn: createClient,
+    onSuccess: async (response) => {
+      requireServerSuccess(response)
+      toast.success(t('Client created'))
+      setCreateOpen(false)
+      await invalidate()
+    },
+    onError: (error) => handleServerError(error, t('Failed to create client')),
+  })
+
+  const statusMutation = useMutation({
+    mutationFn: (client: ClientUsage) =>
+      updateClient(client.id, {
+        status:
+          client.status === CLIENT_STATUS_ENABLED
+            ? CLIENT_STATUS_DISABLED
+            : CLIENT_STATUS_ENABLED,
+      }),
+    onSuccess: async (response) => {
+      requireServerSuccess(response)
+      await invalidate()
+    },
+    onError: (error) => handleServerError(error, t('Failed to update client')),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteClient(id),
+    onSuccess: async (response) => {
+      requireServerSuccess(response)
+      toast.success(t('Client deleted'))
+      setPendingDelete(null)
+      await invalidate()
+    },
+    onError: (error) => handleServerError(error, t('Failed to delete client')),
+  })
+
+  const clients = clientsQuery.data ?? []
+
+  return (
+    <div className='space-y-6'>
+      <div className='flex flex-wrap items-start justify-between gap-4'>
+        <div className='space-y-1'>
+          <h1 className='text-2xl font-semibold tracking-tight'>
+            {t('Clients')}
+          </h1>
+          <p className='text-muted-foreground text-sm'>
+            {t(
+              'Downstream customers you resell to. Give each one a budget, issue keys under it, and the margin is the budget minus what they used.'
+            )}
+          </p>
+        </div>
+        <Button onClick={() => setCreateOpen(true)}>
+          <Plus className='mr-2 size-4' />
+          {t('New client')}
+        </Button>
+      </div>
+
+      {clientsQuery.isLoading && <LoadingState />}
+      {clientsQuery.isError && (
+        <ErrorState
+          title={t('Could not load clients')}
+          onRetry={() => clientsQuery.refetch()}
+        />
+      )}
+      {!clientsQuery.isLoading &&
+        !clientsQuery.isError &&
+        clients.length === 0 && (
+          <EmptyState
+            title={t('No clients yet')}
+            description={t(
+              'Create a client, then issue API keys under it to track their usage and margin.'
+            )}
+          />
+        )}
+
+      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
+        {clients.map((client) => (
+          <ClientCard
+            key={client.id}
+            client={client}
+            onToggleStatus={() => statusMutation.mutate(client)}
+            onDelete={() => setPendingDelete(client)}
+            busy={statusMutation.isPending}
+          />
+        ))}
+      </div>
+
+      <ClientFormDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        isSubmitting={createMutation.isPending}
+        onSubmit={(values) =>
+          createMutation.mutate({
+            name: values.name,
+            budget_quota: values.budget,
+            remark: values.remark,
+          })
+        }
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null)
+        }}
+        title={t('Delete client')}
+        desc={t(
+          'This removes {{name}}. A client that still has API keys cannot be deleted.',
+          { name: pendingDelete?.name ?? '' }
+        )}
+        destructive
+        isLoading={deleteMutation.isPending}
+        handleConfirm={() => {
+          if (pendingDelete) deleteMutation.mutate(pendingDelete.id)
+        }}
+      />
+    </div>
+  )
+}
+
+interface ClientCardProps {
+  client: ClientUsage
+  busy: boolean
+  onToggleStatus: () => void
+  onDelete: () => void
+}
+
+function ClientCard(props: ClientCardProps) {
+  const { t } = useTranslation()
+  const enabled = props.client.status === CLIENT_STATUS_ENABLED
+  const margin = props.client.budget_quota - props.client.used_quota
+
+  return (
+    <Card>
+      <CardHeader className='flex flex-row items-center justify-between gap-2 space-y-0'>
+        <CardTitle className='truncate text-base'>
+          {props.client.name}
+        </CardTitle>
+        <StatusBadge
+          label={enabled ? t('Enabled') : t('Disabled')}
+          variant={enabled ? 'success' : 'neutral'}
+          copyable={false}
+        />
+      </CardHeader>
+      <CardContent className='space-y-4'>
+        <dl className='grid grid-cols-2 gap-3 text-sm'>
+          <div>
+            <dt className='text-muted-foreground text-xs'>{t('Budget')}</dt>
+            <dd className='font-semibold'>
+              {formatQuotaWithCurrency(props.client.budget_quota)}
+            </dd>
+          </div>
+          <div>
+            <dt className='text-muted-foreground text-xs'>{t('Used')}</dt>
+            <dd className='font-semibold'>
+              {formatQuotaWithCurrency(props.client.used_quota)}
+            </dd>
+          </div>
+          <div>
+            <dt className='text-muted-foreground text-xs'>{t('Margin')}</dt>
+            <dd
+              className={
+                margin < 0 ? 'text-destructive font-semibold' : 'font-semibold'
+              }
+            >
+              {formatQuotaWithCurrency(margin)}
+            </dd>
+          </div>
+          <div>
+            <dt className='text-muted-foreground text-xs'>{t('API keys')}</dt>
+            <dd className='font-semibold'>{props.client.key_count}</dd>
+          </div>
+        </dl>
+
+        {props.client.remark && (
+          <p className='text-muted-foreground line-clamp-2 text-xs'>
+            {props.client.remark}
+          </p>
+        )}
+
+        <div className='flex gap-2'>
+          <Button
+            size='sm'
+            variant='outline'
+            disabled={props.busy}
+            onClick={props.onToggleStatus}
+          >
+            {enabled ? t('Disable') : t('Enable')}
+          </Button>
+          <Button
+            size='sm'
+            variant='outline'
+            className='text-destructive'
+            onClick={props.onDelete}
+          >
+            {t('Delete')}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}

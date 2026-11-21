@@ -7853,6 +7853,23 @@
     "Optional. Defaults to the channel type name.": "Optional. Defaults to the channel type name.",
     "Optional. Leave empty to use the provider default.": "Optional. Leave empty to use the provider default.",
     "Comma separated. At least one model is required once a key is set.": "Comma separated. At least one model is required once a key is set.",
-    "List at least one model for this channel": "List at least one model for this channel"
+    "List at least one model for this channel": "List at least one model for this channel",
+    "Clients": "Clients",
+    "Downstream customers you resell to. Give each one a budget, issue keys under it, and the margin is the budget minus what they used.": "Downstream customers you resell to. Give each one a budget, issue keys under it, and the margin is the budget minus what they used.",
+    "New client": "New client",
+    "Client created": "Client created",
+    "Failed to create client": "Failed to create client",
+    "Failed to update client": "Failed to update client",
+    "Failed to delete client": "Failed to delete client",
+    "Client deleted": "Client deleted",
+    "Could not load clients": "Could not load clients",
+    "No clients yet": "No clients yet",
+    "Create a client, then issue API keys under it to track their usage and margin.": "Create a client, then issue API keys under it to track their usage and margin.",
+    "Delete client": "Delete client",
+    "This removes {{name}}. A client that still has API keys cannot be deleted.": "This removes {{name}}. A client that still has API keys cannot be deleted.",
+    "Budget": "Budget",
+    "Margin": "Margin",
+    "Client name": "Client name",
+    "For example: Acme Corp": "For example: Acme Corp"
   }
 }

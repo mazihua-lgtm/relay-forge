@@ -307,6 +307,17 @@ func SetApiRouter(router *gin.Engine) {
 			tokenRoute.POST("/batch/keys", middleware.CriticalRateLimit(), middleware.DisableCache(), controller.GetTokenKeysBatch)
 		}
 
+		// Downstream customers of a reseller. Every handler scopes by the
+		// caller's own id, so one account can never read another's clients.
+		clientRoute := apiRouter.Group("/client")
+		clientRoute.Use(middleware.UserAuth())
+		{
+			clientRoute.GET("/", controller.GetAllClients)
+			clientRoute.POST("/", controller.AddClient)
+			clientRoute.PUT("/:id", controller.UpdateClient)
+			clientRoute.DELETE("/:id", controller.DeleteClient)
+		}
+
 		usageRoute := apiRouter.Group("/usage")
 		usageRoute.Use(middleware.CORS(), middleware.CriticalRateLimit())
 		{

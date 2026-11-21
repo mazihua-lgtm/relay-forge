@@ -7853,6 +7853,23 @@
     "Optional. Defaults to the channel type name.": "可選，預設用渠道類型名稱。",
     "Optional. Leave empty to use the provider default.": "可選，留空則用服務商預設位址。",
     "Comma separated. At least one model is required once a key is set.": "用逗號分隔；填了 Key 就必須至少填一個模型。",
-    "List at least one model for this channel": "這個渠道至少要填一個模型"
+    "List at least one model for this channel": "這個渠道至少要填一個模型",
+    "Clients": "客戶",
+    "Downstream customers you resell to. Give each one a budget, issue keys under it, and the margin is the budget minus what they used.": "你的下游客戶。給每個客戶設一個預算，在他名下簽發 Key，毛利就是預算減去實際用量。",
+    "New client": "新建客戶",
+    "Client created": "客戶已建立",
+    "Failed to create client": "建立客戶失敗",
+    "Failed to update client": "更新客戶失敗",
+    "Failed to delete client": "刪除客戶失敗",
+    "Client deleted": "客戶已刪除",
+    "Could not load clients": "無法載入客戶列表",
+    "No clients yet": "還沒有客戶",
+    "Create a client, then issue API keys under it to track their usage and margin.": "先建一個客戶，再在他名下簽發 API Key，就能追蹤用量和毛利。",
+    "Delete client": "刪除客戶",
+    "This removes {{name}}. A client that still has API keys cannot be deleted.": "將刪除 {{name}}。名下還有 API Key 的客戶不能刪除。",
+    "Budget": "預算",
+    "Margin": "毛利",
+    "Client name": "客戶名稱",
+    "For example: Acme Corp": "例如：某某公司"
   }
 }

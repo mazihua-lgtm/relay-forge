@@ -308,6 +308,14 @@ func AddToken(c *gin.Context) {
 		common.ApiErrorT(c, "Token name is too long")
 		return
 	}
+	// A key may only be filed under a client the caller owns; otherwise one
+	// reseller could attach keys to another's customer.
+	if token.ClientId != nil {
+		if _, err := model.GetClientById(c.GetInt("id"), *token.ClientId); err != nil {
+			common.ApiErrorT(c, "Client not found")
+			return
+		}
+	}
 	params := tokenAuditParams(c)
 	params["name"] = token.Name
 	// 非无限额度时，检查额度值是否超出有效范围
@@ -360,6 +368,7 @@ func AddToken(c *gin.Context) {
 		ModelLimits:        token.ModelLimits,
 		AllowIps:           token.AllowIps,
 		Group:              token.Group,
+		ClientId:           token.ClientId,
 		CrossGroupRetry:    token.CrossGroupRetry,
 		AutoGroups:         token.AutoGroups,
 	}
