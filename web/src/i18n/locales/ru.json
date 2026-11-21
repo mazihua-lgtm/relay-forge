@@ -7876,6 +7876,8 @@
     "File this key under a downstream client so its usage counts toward that client.": "Привяжите ключ к нижестоящему клиенту, чтобы его расход учитывался у этого клиента.",
     "Search by name": "Поиск по имени",
     "Page {{page}} of {{total}}": "Страница {{page}} из {{total}}",
-    "Over budget: this client has used more than it paid for.": "Превышение бюджета: клиент израсходовал больше, чем заплатил."
+    "Over budget: this client has used more than it paid for.": "Превышение бюджета: клиент израсходовал больше, чем заплатил.",
+    "Also limit each API key separately": "Ограничивать каждый ключ API отдельно",
+    "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "То же окно и то же количество применяются к каждому ключу сверх лимита аккаунта, чтобы один ключ не израсходовал весь лимит."
   }
 }

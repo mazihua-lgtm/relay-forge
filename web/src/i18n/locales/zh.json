@@ -7876,6 +7876,8 @@
     "File this key under a downstream client so its usage counts toward that client.": "把这个 Key 归到某个下游客户名下，它的用量就计入该客户。",
     "Search by name": "按名称搜索",
     "Page {{page}} of {{total}}": "第 {{page}} / {{total}} 页",
-    "Over budget: this client has used more than it paid for.": "已超支：该客户的用量超过了它支付的金额。"
+    "Over budget: this client has used more than it paid for.": "已超支：该客户的用量超过了它支付的金额。",
+    "Also limit each API key separately": "同时按 API Key 单独限流",
+    "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "在账号限流之外，同样的时间窗口和次数对每把 Key 各算一份，避免单把 Key 吃光全部额度。"
   }
 }

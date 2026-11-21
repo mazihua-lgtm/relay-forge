@@ -30,6 +30,7 @@ const SECURITY_SECTIONS = [
       <RateLimitSection
         defaultValues={{
           ModelRequestRateLimitEnabled: settings.ModelRequestRateLimitEnabled,
+          ModelRequestRateLimitPerToken: settings.ModelRequestRateLimitPerToken,
           ModelRequestRateLimitCount: settings.ModelRequestRateLimitCount,
           ModelRequestRateLimitSuccessCount:
             settings.ModelRequestRateLimitSuccessCount,

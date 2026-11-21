@@ -19,6 +19,11 @@ const maxRateLimitDurationSeconds = 24 * 60 * 60
 const maxModelRequestRateLimitCount int64 = math.MaxInt64 / maxRateLimitDurationSeconds
 
 var ModelRequestRateLimitEnabled = false
+
+// ModelRequestRateLimitPerToken applies the same window and count to each API
+// key as well as to the user. A reseller account holds many keys, so a user-only
+// limit lets one key consume the whole allowance.
+var ModelRequestRateLimitPerToken = false
 var ModelRequestRateLimitDurationMinutes = 1
 var ModelRequestRateLimitCount = 0
 var ModelRequestRateLimitSuccessCount = 1000

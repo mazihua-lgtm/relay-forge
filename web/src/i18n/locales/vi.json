@@ -7876,6 +7876,8 @@
     "File this key under a downstream client so its usage counts toward that client.": "Gán key này cho một khách hàng để mức dùng được tính cho khách đó.",
     "Search by name": "Tìm theo tên",
     "Page {{page}} of {{total}}": "Trang {{page}} / {{total}}",
-    "Over budget: this client has used more than it paid for.": "Vượt ngân sách: khách hàng đã dùng nhiều hơn số tiền đã trả."
+    "Over budget: this client has used more than it paid for.": "Vượt ngân sách: khách hàng đã dùng nhiều hơn số tiền đã trả.",
+    "Also limit each API key separately": "Giới hạn riêng từng API key",
+    "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "Cùng khung thời gian và số lần được áp cho từng key bên cạnh giới hạn tài khoản, để một key không dùng hết hạn mức."
   }
 }

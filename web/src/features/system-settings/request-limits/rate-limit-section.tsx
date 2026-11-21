@@ -69,6 +69,7 @@ const isValidJSON = (value: string | undefined) => {
 const createRateLimitSchema = (t: (key: string) => string) =>
   z.object({
     ModelRequestRateLimitEnabled: z.boolean(),
+    ModelRequestRateLimitPerToken: z.boolean(),
     ModelRequestRateLimitDurationMinutes: z.number().min(0),
     ModelRequestRateLimitCount: z.number().min(0).max(100000000),
     ModelRequestRateLimitSuccessCount: z.number().min(1).max(100000000),
@@ -133,6 +134,31 @@ export function RateLimitSection({ defaultValues }: RateLimitSectionProps) {
                   <FormDescription>
                     {t(
                       'This controls model request rate limiting. Web/API route throttling is configured by environment variables and may still return 429.'
+                    )}
+                  </FormDescription>
+                </SettingsSwitchContent>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </SettingsSwitchItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='ModelRequestRateLimitPerToken'
+            render={({ field }) => (
+              <SettingsSwitchItem>
+                <SettingsSwitchContent>
+                  <FormLabel>
+                    {t('Also limit each API key separately')}
+                  </FormLabel>
+                  <FormDescription>
+                    {t(
+                      'The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.'
                     )}
                   </FormDescription>
                 </SettingsSwitchContent>

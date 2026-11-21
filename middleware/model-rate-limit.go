@@ -205,6 +205,22 @@ func ModelRequestRateLimit() func(c *gin.Context) {
 		} else {
 			memoryRateLimitHandler(subject, duration, totalMaxCount, successMaxCount)(c)
 		}
+
+		// 用户维度通过后，再按令牌单独算一份：一个账号下挂着很多把 Key 时，
+		// 只按用户限流等于没有限住任何一把。
+		if c.IsAborted() || !setting.ModelRequestRateLimitPerToken {
+			return
+		}
+		tokenId := c.GetInt("token_id")
+		if tokenId <= 0 {
+			return
+		}
+		tokenSubject := "token:" + strconv.Itoa(tokenId)
+		if common.RedisEnabled {
+			redisRateLimitHandler(tokenSubject, duration, totalMaxCount, successMaxCount)(c)
+		} else {
+			memoryRateLimitHandler(tokenSubject, duration, totalMaxCount, successMaxCount)(c)
+		}
 	}
 }
 
