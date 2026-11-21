@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -109,4 +110,40 @@ func TestIsEndUserPolicyRefusal(t *testing.T) {
 	assert.False(t, IsEndUserPolicyRefusal(rateLimited), "429 is never treated as a policy refusal")
 
 	assert.False(t, IsEndUserPolicyRefusal(nil))
+}
+
+// The header value is caller-controlled, so the table must stay bounded no
+// matter how many distinct ids arrive.
+func TestEndUserTableStaysBounded(t *testing.T) {
+	ResetEndUserState()
+	t.Cleanup(ResetEndUserState)
+
+	for i := 0; i < endUserMaxEntries+50; i++ {
+		RecordEndUserRefusal(1, "gpt-4o", "user-"+strconv.Itoa(i))
+	}
+
+	endUserMu.Lock()
+	size := len(endUserRefusals)
+	endUserMu.Unlock()
+	assert.LessOrEqual(t, size, endUserMaxEntries)
+}
+
+// A blocked caller that keeps sending refusals must not grow the counter.
+func TestBlockedEndUserRefusalsStayCapped(t *testing.T) {
+	ResetEndUserState()
+	t.Cleanup(ResetEndUserState)
+
+	for i := 0; i < endUserRefusalThreshold; i++ {
+		RecordEndUserRefusal(1, "gpt-4o", "user-1")
+	}
+	require.True(t, IsEndUserBlocked(1, "gpt-4o", "user-1"))
+
+	for i := 0; i < 100; i++ {
+		RecordEndUserRefusal(1, "gpt-4o", "user-1")
+	}
+
+	endUserMu.Lock()
+	size := len(endUserRefusals[endUserKey{TokenId: 1, Model: "gpt-4o", EndUser: "user-1"}])
+	endUserMu.Unlock()
+	assert.LessOrEqual(t, size, endUserRefusalThreshold)
 }
