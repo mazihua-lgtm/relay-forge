@@ -52,6 +52,13 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Sheet,
   SheetClose,
   SheetContent,
@@ -62,6 +69,7 @@ import {
 } from '@/components/ui/sheet'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { getClients } from '@/features/clients/api'
 import { RelatedPolicyLink } from '@/features/system-settings/request-policies/related-policy-link'
 import { useStatus } from '@/hooks/use-status'
 import { getUserModels, getUserGroups } from '@/lib/api'
@@ -137,6 +145,14 @@ export function ApiKeysMutateDrawer({
     enabled: open,
     staleTime: 0,
   })
+
+  const { data: clientsData } = useQuery({
+    queryKey: ['clients'],
+    queryFn: async () => requireServerSuccess(await getClients()),
+    enabled: open,
+    staleTime: 0,
+  })
+  const clients = clientsData?.data ?? []
 
   const {
     data: apiKeyData,
@@ -413,6 +429,51 @@ export function ApiKeysMutateDrawer({
                   </FormItem>
                 )}
               />
+
+              {clients.length > 0 && (
+                <FormField
+                  control={form.control}
+                  name='client_id'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('Client')}</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value ? String(field.value) : 'none'}
+                          onValueChange={(value) =>
+                            field.onChange(
+                              value === 'none' ? null : Number(value)
+                            )
+                          }
+                        >
+                          <SelectTrigger className='w-full'>
+                            <SelectValue placeholder={t('Select a client')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value='none'>
+                              {t('No client')}
+                            </SelectItem>
+                            {clients.map((client) => (
+                              <SelectItem
+                                key={client.id}
+                                value={String(client.id)}
+                              >
+                                {client.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormDescription>
+                        {t(
+                          'File this key under a downstream client so its usage counts toward that client.'
+                        )}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}

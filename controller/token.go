@@ -469,6 +469,19 @@ func UpdateToken(c *gin.Context) {
 			cleanToken.AllowUserQuotaQuery = *request.AllowUserQuotaQuery
 		}
 		cleanToken.Group = token.Group
+		// 0 clears the client; a positive id files the key under it. An absent
+		// field (nil) leaves the current client untouched.
+		if token.ClientId != nil {
+			if *token.ClientId == 0 {
+				cleanToken.ClientId = nil
+			} else {
+				if _, err := model.GetClientById(userId, *token.ClientId); err != nil {
+					common.ApiErrorT(c, "Client not found")
+					return
+				}
+				cleanToken.ClientId = token.ClientId
+			}
+		}
 		cleanToken.CrossGroupRetry = token.CrossGroupRetry
 		if token.Group != "auto" {
 			cleanToken.CrossGroupRetry = false

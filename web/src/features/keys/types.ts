@@ -34,6 +34,8 @@ export const apiKeySchema = z.object({
   created_time: z.number(),
   accessed_time: z.number(),
   group: z.string().nullish().default(''),
+  // Downstream client this key is filed under; null means the account holder.
+  client_id: z.number().nullish(),
   auto_groups: z.array(z.string()).nullish().default(null),
   cross_group_retry: z
     .preprocess((v) => {
@@ -96,6 +98,7 @@ export interface ApiKeyFormData {
   group: string
   auto_groups: string[]
   cross_group_retry: boolean
+  client_id?: number | null
 }
 
 export interface TokenAutoGroupsConfig {

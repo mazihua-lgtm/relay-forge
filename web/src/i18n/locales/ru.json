@@ -7870,6 +7870,9 @@
     "Budget": "Budget",
     "Margin": "Margin",
     "Client name": "Client name",
-    "For example: Acme Corp": "For example: Acme Corp"
+    "For example: Acme Corp": "For example: Acme Corp",
+    "Select a client": "Select a client",
+    "No client": "No client",
+    "File this key under a downstream client so its usage counts toward that client.": "File this key under a downstream client so its usage counts toward that client."
   }
 }

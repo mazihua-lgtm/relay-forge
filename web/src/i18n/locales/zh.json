@@ -7870,6 +7870,9 @@
     "Budget": "预算",
     "Margin": "毛利",
     "Client name": "客户名称",
-    "For example: Acme Corp": "例如：某某公司"
+    "For example: Acme Corp": "例如：某某公司",
+    "Select a client": "选择客户",
+    "No client": "不属于任何客户",
+    "File this key under a downstream client so its usage counts toward that client.": "把这个 Key 归到某个下游客户名下，它的用量就计入该客户。"
   }
 }

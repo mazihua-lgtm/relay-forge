@@ -209,3 +209,34 @@ describe('API key user quota query form mapping', () => {
     }
   )
 })
+
+describe('API key client mapping', () => {
+  test('leaves a new key unassigned by default', () => {
+    const defaults = getApiKeyFormDefaultValues(false)
+
+    expect(defaults.client_id).toBe(null)
+    expect(transformFormDataToPayload(defaults).client_id).toBe(null)
+  })
+
+  test('carries the client from the form to the payload and back', () => {
+    const payload = transformFormDataToPayload({
+      ...getApiKeyFormDefaultValues(false),
+      client_id: 7,
+    })
+    expect(payload.client_id).toBe(7)
+
+    const defaults = transformApiKeyToFormDefaults({
+      ...baseApiKey,
+      client_id: 7,
+    })
+    expect(defaults.client_id).toBe(7)
+  })
+
+  test('clears the client when the form selects none', () => {
+    const payload = transformFormDataToPayload({
+      ...getApiKeyFormDefaultValues(false),
+      client_id: null,
+    })
+    expect(payload.client_id).toBe(null)
+  })
+})
