@@ -31,6 +31,8 @@ const SECURITY_SECTIONS = [
         defaultValues={{
           ModelRequestRateLimitEnabled: settings.ModelRequestRateLimitEnabled,
           ModelRequestRateLimitPerToken: settings.ModelRequestRateLimitPerToken,
+          ModelRequestRateLimitTokenCount:
+            settings.ModelRequestRateLimitTokenCount,
           ChannelConcurrencyLimit: settings.ChannelConcurrencyLimit,
           ModelRequestRateLimitCount: settings.ModelRequestRateLimitCount,
           ModelRequestRateLimitSuccessCount:

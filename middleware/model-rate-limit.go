@@ -133,6 +133,32 @@ func redisRateLimitHandler(subject string, duration int64, totalMaxCount, succes
 }
 
 // 内存限流处理器
+// checkTokenTotalLimit applies only the total-request dimension for one API key.
+// It deliberately does not call c.Next(): it runs before the account-level
+// handler, which owns the request chain and the success-count reservation.
+func checkTokenTotalLimit(subject string, duration int64, maxCount int) (bool, error) {
+	if maxCount <= 0 {
+		return true, nil
+	}
+	if common.RedisEnabled {
+		ctx := context.Background()
+		rdb := common.RDB
+		if rdb == nil {
+			return true, nil
+		}
+		tb := limiter.New(ctx, rdb)
+		return tb.Allow(
+			ctx,
+			fmt.Sprintf("rateLimit:%s", subject),
+			limiter.WithCapacity(rateLimitCapacity(maxCount, duration)),
+			limiter.WithRate(int64(maxCount)),
+			limiter.WithRequested(duration),
+		)
+	}
+	inMemoryRateLimiter.Init(time.Duration(setting.ModelRequestRateLimitDurationMinutes) * time.Minute)
+	return inMemoryRateLimiter.Request(ModelRequestRateLimitCountMark+subject, maxCount, duration), nil
+}
+
 func memoryRateLimitHandler(subject string, duration int64, totalMaxCount, successMaxCount int) gin.HandlerFunc {
 	inMemoryRateLimiter.Init(time.Duration(setting.ModelRequestRateLimitDurationMinutes) * time.Minute)
 
@@ -199,27 +225,32 @@ func ModelRequestRateLimit() func(c *gin.Context) {
 			subject += ":" + group
 		}
 
+		// 按令牌再算一份。必须在这里检查：下面的处理器内部会调用 c.Next()，
+		// 串在它后面执行时请求已经处理完了。
+		if setting.ModelRequestRateLimitPerToken {
+			if tokenId := c.GetInt("token_id"); tokenId > 0 {
+				tokenMaxCount := setting.ModelRequestRateLimitTokenCount
+				if tokenMaxCount <= 0 {
+					tokenMaxCount = totalMaxCount
+				}
+				allowed, err := checkTokenTotalLimit("token:"+strconv.Itoa(tokenId), duration, tokenMaxCount)
+				if err != nil {
+					common.SysLog(common.LogText("failed to check the per-key request limit: %s", err.Error()))
+					abortWithOpenAiMessage(c, http.StatusInternalServerError, "rate_limit_check_failed")
+					return
+				}
+				if !allowed {
+					abortWithOpenAiMessage(c, http.StatusTooManyRequests, i18n.T(c, i18n.MsgRateLimitTotalReached, map[string]any{"Minutes": setting.ModelRequestRateLimitDurationMinutes, "Max": tokenMaxCount}))
+					return
+				}
+			}
+		}
+
 		// 根据存储类型选择并执行限流处理器
 		if common.RedisEnabled {
 			redisRateLimitHandler(subject, duration, totalMaxCount, successMaxCount)(c)
 		} else {
 			memoryRateLimitHandler(subject, duration, totalMaxCount, successMaxCount)(c)
-		}
-
-		// 用户维度通过后，再按令牌单独算一份：一个账号下挂着很多把 Key 时，
-		// 只按用户限流等于没有限住任何一把。
-		if c.IsAborted() || !setting.ModelRequestRateLimitPerToken {
-			return
-		}
-		tokenId := c.GetInt("token_id")
-		if tokenId <= 0 {
-			return
-		}
-		tokenSubject := "token:" + strconv.Itoa(tokenId)
-		if common.RedisEnabled {
-			redisRateLimitHandler(tokenSubject, duration, totalMaxCount, successMaxCount)(c)
-		} else {
-			memoryRateLimitHandler(tokenSubject, duration, totalMaxCount, successMaxCount)(c)
 		}
 	}
 }

@@ -70,6 +70,7 @@ const createRateLimitSchema = (t: (key: string) => string) =>
   z.object({
     ModelRequestRateLimitEnabled: z.boolean(),
     ModelRequestRateLimitPerToken: z.boolean(),
+    ModelRequestRateLimitTokenCount: z.number().min(0).max(100000000),
     ChannelConcurrencyLimit: z.number().min(0).max(1000000),
     ModelRequestRateLimitDurationMinutes: z.number().min(0),
     ModelRequestRateLimitCount: z.number().min(0).max(100000000),
@@ -170,6 +171,31 @@ export function RateLimitSection({ defaultValues }: RateLimitSectionProps) {
                   />
                 </FormControl>
               </SettingsSwitchItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='ModelRequestRateLimitTokenCount'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('Max requests per key per period')}</FormLabel>
+                <FormControl>
+                  <Input
+                    type='number'
+                    min={0}
+                    step={1}
+                    {...field}
+                    onChange={(e) =>
+                      field.onChange(Number.parseInt(e.target.value) || 0)
+                    }
+                  />
+                </FormControl>
+                <FormDescription>
+                  {t('0 uses the account limit above.')}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
             )}
           />
 

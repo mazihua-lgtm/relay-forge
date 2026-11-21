@@ -7881,6 +7881,8 @@
     "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "La même fenêtre et le même quota s'appliquent à chaque clé en plus de la limite du compte, afin qu'une seule clé ne consomme pas toute l'allocation.",
     "Channel concurrency limit": "Limite de concurrence par canal",
     "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "Nombre maximal de requêtes simultanées envoyées par ce nœud vers un même canal. 0 signifie illimité.",
-    "requests": "requêtes"
+    "requests": "requêtes",
+    "Max requests per key per period": "Requêtes max par clé et par période",
+    "0 uses the account limit above.": "0 utilise la limite du compte ci-dessus."
   }
 }

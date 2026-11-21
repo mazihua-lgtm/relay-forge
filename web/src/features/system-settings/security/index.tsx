@@ -27,6 +27,7 @@ import {
 const defaultSecuritySettings: SecuritySettings = {
   ModelRequestRateLimitEnabled: false,
   ModelRequestRateLimitPerToken: false,
+  ModelRequestRateLimitTokenCount: 0,
   ChannelConcurrencyLimit: 0,
   ModelRequestRateLimitCount: 0,
   ModelRequestRateLimitSuccessCount: 1000,

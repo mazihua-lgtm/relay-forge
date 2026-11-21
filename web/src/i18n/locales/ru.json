@@ -7881,6 +7881,8 @@
     "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "То же окно и то же количество применяются к каждому ключу сверх лимита аккаунта, чтобы один ключ не израсходовал весь лимит.",
     "Channel concurrency limit": "Предел параллельных запросов к каналу",
     "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "Максимум одновременных запросов, которые этот узел отправляет в один канал. 0 — без ограничений.",
-    "requests": "запросов"
+    "requests": "запросов",
+    "Max requests per key per period": "Максимум запросов на ключ за период",
+    "0 uses the account limit above.": "0 — использовать лимит аккаунта выше."
   }
 }

@@ -7881,6 +7881,8 @@
     "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.",
     "Channel concurrency limit": "Channel concurrency limit",
     "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "Maximum requests this node sends to one channel at the same time. 0 means unlimited.",
-    "requests": "requests"
+    "requests": "requests",
+    "Max requests per key per period": "Max requests per key per period",
+    "0 uses the account limit above.": "0 uses the account limit above."
   }
 }

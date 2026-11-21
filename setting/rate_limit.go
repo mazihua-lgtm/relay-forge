@@ -25,6 +25,11 @@ var ModelRequestRateLimitEnabled = false
 // limit lets one key consume the whole allowance.
 var ModelRequestRateLimitPerToken = false
 
+// ModelRequestRateLimitTokenCount is the per-key limit. 0 falls back to the
+// account-wide count, which would make the per-key limit redundant, so a real
+// deployment sets it lower than ModelRequestRateLimitCount.
+var ModelRequestRateLimitTokenCount = 0
+
 // ChannelConcurrencyLimit caps how many requests this node may have in flight to
 // one channel at the same time. 0 means unlimited. It protects a channel from
 // being flooded by a single tenant, which is what upstream providers usually

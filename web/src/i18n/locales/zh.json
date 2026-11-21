@@ -7881,6 +7881,8 @@
     "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "在账号限流之外，同样的时间窗口和次数对每把 Key 各算一份，避免单把 Key 吃光全部额度。",
     "Channel concurrency limit": "渠道并发上限",
     "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "本节点同时向单个渠道发送的最大请求数。0 表示不限制。",
-    "requests": "请求"
+    "requests": "请求",
+    "Max requests per key per period": "每把 Key 每周期最大请求数",
+    "0 uses the account limit above.": "0 表示沿用上面的账号上限。"
   }
 }

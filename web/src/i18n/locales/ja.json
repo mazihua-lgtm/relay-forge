@@ -7881,6 +7881,8 @@
     "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "アカウントの制限に加えて、同じ時間枠と回数を各キーに適用します。1 つのキーが全枠を使い切るのを防ぎます。",
     "Channel concurrency limit": "チャネル同時接続数の上限",
     "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "このノードが 1 つのチャネルへ同時に送る最大リクエスト数。0 は無制限です。",
-    "requests": "リクエスト"
+    "requests": "リクエスト",
+    "Max requests per key per period": "キーごとの期間あたり最大リクエスト数",
+    "0 uses the account limit above.": "0 の場合は上記のアカウント上限を使用します。"
   }
 }

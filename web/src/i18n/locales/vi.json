@@ -7881,6 +7881,8 @@
     "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "Cùng khung thời gian và số lần được áp cho từng key bên cạnh giới hạn tài khoản, để một key không dùng hết hạn mức.",
     "Channel concurrency limit": "Giới hạn đồng thời mỗi kênh",
     "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "Số yêu cầu đồng thời tối đa mà nút này gửi tới một kênh. 0 là không giới hạn.",
-    "requests": "yêu cầu"
+    "requests": "yêu cầu",
+    "Max requests per key per period": "Số yêu cầu tối đa mỗi key mỗi kỳ",
+    "0 uses the account limit above.": "0 sẽ dùng giới hạn tài khoản ở trên."
   }
 }

@@ -150,6 +150,7 @@ func InitOptionMap() {
 	common.OptionMap["QuotaRemindThreshold"] = strconv.Itoa(common.QuotaRemindThreshold)
 	common.OptionMap["PreConsumedQuota"] = strconv.Itoa(common.PreConsumedQuota)
 	common.OptionMap["ModelRequestRateLimitCount"] = strconv.Itoa(setting.ModelRequestRateLimitCount)
+	common.OptionMap["ModelRequestRateLimitTokenCount"] = strconv.Itoa(setting.ModelRequestRateLimitTokenCount)
 	common.OptionMap["ModelRequestRateLimitDurationMinutes"] = strconv.Itoa(setting.ModelRequestRateLimitDurationMinutes)
 	common.OptionMap["ModelRequestRateLimitSuccessCount"] = strconv.Itoa(setting.ModelRequestRateLimitSuccessCount)
 	common.OptionMap["ModelRequestRateLimitGroup"] = setting.ModelRequestRateLimitGroup2JSONString()
@@ -487,13 +488,6 @@ func updateOptionMap(key string, value string) (err error) {
 			operation_setting.SelfUseModeEnabled = boolValue
 		case "ModelRequestRateLimitEnabled":
 			setting.ModelRequestRateLimitEnabled = boolValue
-		case "ModelRequestRateLimitPerToken":
-			setting.ModelRequestRateLimitPerToken = boolValue
-		case "ChannelConcurrencyLimit":
-			setting.ChannelConcurrencyLimit, _ = strconv.Atoi(value)
-			if setting.ChannelConcurrencyLimit < 0 {
-				setting.ChannelConcurrencyLimit = 0
-			}
 		case "SMTPSSLEnabled":
 			common.SMTPSSLEnabled = boolValue
 		case "SMTPStartTLSEnabled":
@@ -663,6 +657,15 @@ func updateOptionMap(key string, value string) (err error) {
 		common.PreConsumedQuota, _ = strconv.Atoi(value)
 	case "ModelRequestRateLimitCount":
 		setting.ModelRequestRateLimitCount, _ = strconv.Atoi(value)
+	case "ModelRequestRateLimitTokenCount":
+		setting.ModelRequestRateLimitTokenCount, _ = strconv.Atoi(value)
+	case "ModelRequestRateLimitPerToken":
+		setting.ModelRequestRateLimitPerToken = value == "true"
+	case "ChannelConcurrencyLimit":
+		setting.ChannelConcurrencyLimit, _ = strconv.Atoi(value)
+		if setting.ChannelConcurrencyLimit < 0 {
+			setting.ChannelConcurrencyLimit = 0
+		}
 	case "ModelRequestRateLimitDurationMinutes":
 		setting.ModelRequestRateLimitDurationMinutes, _ = strconv.Atoi(value)
 	case "ModelRequestRateLimitSuccessCount":
