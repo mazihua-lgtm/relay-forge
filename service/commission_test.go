@@ -1,7 +1,10 @@
 package service
 
 import (
+	"net/http/httptest"
 	"testing"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/mazihua-lgtm/relay-forge/common"
 	"github.com/mazihua-lgtm/relay-forge/model"
@@ -56,8 +59,10 @@ func inviterSystemLogs(t *testing.T, userId int) []model.Log {
 }
 
 // TestCommissionSettle covers the distributor's continuous commission: an
-// invitee's consumption credits the inviter's configured rate, rounded down,
-// through both settlement entries (PostConsumeQuota and the BillingSession).
+// invitee's consumption credits the inviter's configured rate, rounded down.
+// Commission is settled by the callers with the full consumed amount, never with
+// the pre-consume delta, so a request whose pre-consumption matched the actual
+// cost still pays.
 func TestCommissionSettle(t *testing.T) {
 	previousBatch, previousRedis := common.BatchUpdateEnabled, common.RedisEnabled
 	common.BatchUpdateEnabled = false
@@ -73,6 +78,7 @@ func TestCommissionSettle(t *testing.T) {
 
 		relayInfo := &relaycommon.RelayInfo{UserId: invitee.Id, IsPlayground: true}
 		require.NoError(t, PostConsumeQuota(relayInfo, 1000, 0, false))
+		settleInviterCommission(relayInfo, 1000)
 
 		assert.Equal(t, 100, commissionQuotaOf(t, inviter.Id), "inviter earns 10% of the consumption")
 		assert.Equal(t, 4000, commissionQuotaOf(t, invitee.Id), "invitee still pays the full consumption")
@@ -89,10 +95,28 @@ func TestCommissionSettle(t *testing.T) {
 
 		relayInfo := &relaycommon.RelayInfo{UserId: invitee.Id, IsPlayground: true}
 		require.NoError(t, PostConsumeQuota(relayInfo, 333, 0, false))
+		settleInviterCommission(relayInfo, 333)
 
 		// 333 * 0.1 = 33.3 → 33
 		assert.Equal(t, 33, commissionQuotaOf(t, inviter.Id))
 		assert.Equal(t, 4667, commissionQuotaOf(t, invitee.Id))
+	})
+
+	t.Run("a pre-consumption that matches the actual cost still pays commission", func(t *testing.T) {
+		resetCommissionState(t)
+		inviter := newCommissionTestUser(t, "commission-delta-inviter", 0, 0, 0.1)
+		invitee := newCommissionTestUser(t, "commission-delta-invitee", 5000, inviter.Id, 0)
+
+		// 没有 BillingSession，且预扣额度正好等于实际消耗：差额为 0。
+		relayInfo := &relaycommon.RelayInfo{
+			UserId:                invitee.Id,
+			IsPlayground:          true,
+			FinalPreConsumedQuota: 500,
+		}
+		ginCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
+		require.NoError(t, SettleBilling(ginCtx, relayInfo, 500))
+
+		assert.Equal(t, 50, commissionQuotaOf(t, inviter.Id), "a zero delta must not swallow the commission")
 	})
 
 	t.Run("a zero rate pays nothing", func(t *testing.T) {
@@ -154,4 +178,57 @@ func TestCommissionSettle(t *testing.T) {
 		assert.Equal(t, 100, commissionQuotaOf(t, inviter.Id), "500 * 0.2")
 		assert.Equal(t, 4500, commissionQuotaOf(t, invitee.Id))
 	})
+}
+
+// A refunded task must take the commission back; otherwise a user could farm
+// commission by submitting tasks that always fail.
+func TestCommissionClawbackOnRefund(t *testing.T) {
+	previousBatch, previousRedis := common.BatchUpdateEnabled, common.RedisEnabled
+	common.BatchUpdateEnabled = false
+	common.RedisEnabled = false
+	t.Cleanup(func() {
+		common.BatchUpdateEnabled, common.RedisEnabled = previousBatch, previousRedis
+	})
+
+	resetCommissionState(t)
+	inviter := newCommissionTestUser(t, "clawback-inviter", 0, 0, 0.1)
+	invitee := newCommissionTestUser(t, "clawback-invitee", 5000, inviter.Id, 0)
+
+	relayInfo := &relaycommon.RelayInfo{UserId: invitee.Id, IsPlayground: true}
+	require.NoError(t, PostConsumeQuota(relayInfo, 1000, 0, false))
+	settleInviterCommission(relayInfo, 1000)
+	require.Equal(t, 100, commissionQuotaOf(t, inviter.Id))
+
+	clawed, err := model.ClawbackInviterCommission(invitee.Id, 1000)
+	require.NoError(t, err)
+	assert.Equal(t, 100, clawed)
+	assert.Equal(t, 0, commissionQuotaOf(t, inviter.Id), "the commission is reversed")
+
+	logs := inviterSystemLogs(t, inviter.Id)
+	require.Len(t, logs, 2)
+	assert.Contains(t, logs[1].Content, "任务退款冲回抽成")
+}
+
+// The clawback is proportional: a partial refund only takes back its share.
+func TestCommissionClawbackIsProportional(t *testing.T) {
+	previousBatch, previousRedis := common.BatchUpdateEnabled, common.RedisEnabled
+	common.BatchUpdateEnabled = false
+	common.RedisEnabled = false
+	t.Cleanup(func() {
+		common.BatchUpdateEnabled, common.RedisEnabled = previousBatch, previousRedis
+	})
+
+	resetCommissionState(t)
+	inviter := newCommissionTestUser(t, "clawback-part-inviter", 0, 0, 0.1)
+	invitee := newCommissionTestUser(t, "clawback-part-invitee", 5000, inviter.Id, 0)
+
+	relayInfo := &relaycommon.RelayInfo{UserId: invitee.Id, IsPlayground: true}
+	require.NoError(t, PostConsumeQuota(relayInfo, 1000, 0, false))
+	settleInviterCommission(relayInfo, 1000)
+	require.Equal(t, 100, commissionQuotaOf(t, inviter.Id))
+
+	clawed, err := model.ClawbackInviterCommission(invitee.Id, 400)
+	require.NoError(t, err)
+	assert.Equal(t, 40, clawed)
+	assert.Equal(t, 60, commissionQuotaOf(t, inviter.Id))
 }

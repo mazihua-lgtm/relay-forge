@@ -104,8 +104,13 @@ func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuo
 	// 回退：无 BillingSession 时使用旧路径
 	quotaDelta := actualQuota - relayInfo.FinalPreConsumedQuota
 	if quotaDelta != 0 {
-		return PostConsumeQuota(relayInfo, quotaDelta, relayInfo.FinalPreConsumedQuota, true)
+		if err := PostConsumeQuota(relayInfo, quotaDelta, relayInfo.FinalPreConsumedQuota, true); err != nil {
+			return err
+		}
 	}
+	// 抽成按本次实际消耗结算，与预扣差额无关：预扣刚好够用时差额为 0，
+	// 但这次消费确实发生了，邀请人仍应拿到抽成。
+	settleInviterCommission(relayInfo, actualQuota)
 	return nil
 }
 

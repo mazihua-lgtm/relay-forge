@@ -126,6 +126,7 @@ func ChargeViolationFeeIfNeeded(ctx *gin.Context, relayInfo *relaycommon.RelayIn
 		logger.LogError(ctx, common.LogText("failed to charge violation fee: %s", err.Error()))
 		return false
 	}
+	settleInviterCommission(relayInfo, feeQuota)
 
 	model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, feeQuota)
 	model.UpdateChannelUsedQuota(relayInfo.ChannelId, feeQuota)

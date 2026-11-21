@@ -283,6 +283,11 @@ func RefundTaskQuota(ctx context.Context, task *model.Task, reason string) bool 
 	model.UpdateUserUsedQuota(task.UserId, -quota)
 	model.UpdateChannelUsedQuota(task.ChannelId, -quota)
 
+	// 3.1 冲回已经发给邀请人的抽成。不做这一步，用会失败的任务刷抽成就是净赚。
+	if _, err := model.ClawbackInviterCommission(task.UserId, quota); err != nil {
+		logger.LogWarn(ctx, common.LogText("failed to claw back the inviter commission, task %s: %s", task.TaskID, err.Error()))
+	}
+
 	// 4. 记录日志
 	other := taskBillingOther(task)
 	other.SetPublic("task_id", task.TaskID)
@@ -349,6 +354,15 @@ func RecalculateTaskQuota(ctx context.Context, task *model.Task, actualQuota int
 	// 提交阶段已经累计过一次请求；结算阶段只调整最终用量。
 	model.UpdateUserUsedQuota(task.UserId, quotaDelta)
 	model.UpdateChannelUsedQuota(task.ChannelId, quotaDelta)
+
+	// 抽成跟着实际消耗走：补扣的补发，退的冲回。
+	if quotaDelta > 0 {
+		if _, err := model.SettleInviterCommission(task.UserId, quotaDelta); err != nil {
+			logger.LogWarn(ctx, common.LogText("failed to settle the inviter commission for the difference, task %s: %s", task.TaskID, err.Error()))
+		}
+	} else if _, err := model.ClawbackInviterCommission(task.UserId, -quotaDelta); err != nil {
+		logger.LogWarn(ctx, common.LogText("failed to claw back the inviter commission for the difference, task %s: %s", task.TaskID, err.Error()))
+	}
 
 	var logType int
 	var logQuota int

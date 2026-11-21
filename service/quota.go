@@ -152,6 +152,8 @@ func PreWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usag
 	if err != nil {
 		return 0, err
 	}
+	// 分销抽成按实际消耗结算；调用方知道这次消耗的完整金额，不能交给差额。
+	settleInviterCommission(relayInfo, quota)
 	logger.LogInfo(ctx, common.LogText("realtime streaming consume quota success, quota: %d", quota))
 	return quota, nil
 }
@@ -463,9 +465,6 @@ func postConsumeQuotaWithResult(relayInfo *relaycommon.RelayInfo, quota int, pre
 		}
 	}
 	result.FundingApplied = true
-
-	// 分销持续抽成：扣款成功之后给邀请人返佣（失败不影响本次请求）。
-	settleInviterCommission(relayInfo, quota)
 
 	if !relayInfo.IsPlayground {
 		if quota > 0 {

@@ -66,11 +66,7 @@ func SettleInviterCommission(inviteeId int, quota int) (int, error) {
 	}
 	// 用十进制计算避免浮点误差把 100*0.29 算成 28。MySQL 的 float 列是单精度，
 	// 读回的 0.29 可能是 0.28999999…，先按 6 位小数取整，去掉存储带来的噪声。
-	commission := decimal.NewFromFloat(rate).
-		Round(6).
-		Mul(decimal.NewFromInt(int64(quota))).
-		Floor().
-		IntPart()
+	commission := commissionFor(rate, quota)
 	if commission <= 0 {
 		return 0, nil
 	}
@@ -81,6 +77,61 @@ func SettleInviterCommission(inviteeId int, quota int) (int, error) {
 		return 0, err
 	}
 	RecordLog(inviterId, LogTypeSystem, common.NewMessage("下级消费抽成 {{quota}}（下级 {{invitee}} 本次消费 {{consumed}}）", map[string]any{
+		"quota":    logger.FormatQuota(int(commission)),
+		"invitee":  inviteeId,
+		"consumed": logger.FormatQuota(quota),
+	}))
+	return int(commission), nil
+}
+
+// commissionFor applies the inviter's rate to a consumed amount. It uses
+// decimal arithmetic so 100*0.29 does not come out as 28, and rounds the rate
+// to 6 places because the column is single-precision float in MySQL.
+func commissionFor(rate float64, quota int) int64 {
+	value := decimal.NewFromFloat(rate).
+		Round(6).
+		Mul(decimal.NewFromInt(int64(quota))).
+		Floor().
+		IntPart()
+	if value <= 0 {
+		return 0
+	}
+	if value > int64(math.MaxInt) {
+		return 0
+	}
+	return value
+}
+
+// ClawbackInviterCommission reverses the commission paid for one consumption,
+// used when a task is refunded. The rate is read now, so a rate change between
+// settlement and refund makes the reversal approximate; refunds normally happen
+// within minutes of settlement. The inviter's balance may go negative when the
+// commission has already been spent — that debt is the correct accounting.
+func ClawbackInviterCommission(inviteeId int, quota int) (int, error) {
+	if quota <= 0 {
+		return 0, nil
+	}
+	inviterId, rate, err := GetInviterCommission(inviteeId)
+	if err != nil {
+		return 0, err
+	}
+	if inviterId <= 0 || inviterId == inviteeId || rate <= 0 {
+		return 0, nil
+	}
+	if math.IsNaN(rate) || math.IsInf(rate, 0) {
+		return 0, nil
+	}
+	if rate > 1 {
+		rate = 1
+	}
+	commission := commissionFor(rate, quota)
+	if commission <= 0 {
+		return 0, nil
+	}
+	if err := DecreaseUserQuota(inviterId, int(commission), false); err != nil {
+		return 0, err
+	}
+	RecordLog(inviterId, LogTypeSystem, common.NewMessage("任务退款冲回抽成 {{quota}}（下级 {{invitee}} 退款 {{consumed}}）", map[string]any{
 		"quota":    logger.FormatQuota(int(commission)),
 		"invitee":  inviteeId,
 		"consumed": logger.FormatQuota(quota),

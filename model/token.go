@@ -332,17 +332,38 @@ func (token *Token) SelectUpdate() (err error) {
 	return DB.Model(token).Select("accessed_time", "status").Updates(token).Error
 }
 
+// TransferTokenClient moves a key's accumulated usage to the client it is
+// leaving, then resets the key's own counter, so the new owner starts from zero
+// and the old owner's total does not shrink. Both steps share one transaction:
+// a half-applied transfer would either double-count or lose the usage.
+func TransferTokenClient(tokenId int, previousClientId int, usedQuota int64) error {
+	return DB.Transaction(func(tx *gorm.DB) error {
+		if previousClientId > 0 && usedQuota > 0 {
+			if err := tx.Model(&Client{}).Where("id = ?", previousClientId).
+				UpdateColumn("used_quota_snapshot", gorm.Expr("used_quota_snapshot + ?", usedQuota)).Error; err != nil {
+				return err
+			}
+		}
+		return tx.Model(&Token{}).Where("id = ?", tokenId).Update("used_quota", 0).Error
+	})
+}
+
 func (token *Token) Delete() (err error) {
 	if cacheErr := invalidateTokenCacheForMutation(token.Key); cacheErr != nil {
 		common.SysLog(common.LogText("failed to invalidate token cache before delete: %s", cacheErr.Error()))
 	}
-	// Keep the client's total intact: the key disappears, its consumption does not.
-	if token.ClientId != nil {
-		if err := AddClientUsedQuota(*token.ClientId, int64(token.UsedQuota)); err != nil {
-			return err
+	// Keep the client's total intact: the key disappears, its consumption does
+	// not. The snapshot and the delete share one transaction — a half-applied
+	// delete would either lose the usage or count it twice on retry.
+	return DB.Transaction(func(tx *gorm.DB) error {
+		if token.ClientId != nil && token.UsedQuota > 0 {
+			if err := tx.Model(&Client{}).Where("id = ?", *token.ClientId).
+				UpdateColumn("used_quota_snapshot", gorm.Expr("used_quota_snapshot + ?", token.UsedQuota)).Error; err != nil {
+				return err
+			}
 		}
-	}
-	return DB.Delete(token).Error
+		return tx.Delete(token).Error
+	})
 }
 
 func (token *Token) IsModelLimitsEnabled() bool {

@@ -513,6 +513,14 @@ func UpdateToken(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	// 改归属时把已用量留在原客户名下，Key 从零开始记。
+	if previous.ClientId != nil && (cleanToken.ClientId == nil || *cleanToken.ClientId != *previous.ClientId) {
+		if err := model.TransferTokenClient(cleanToken.Id, *previous.ClientId, int64(previous.UsedQuota)); err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		cleanToken.UsedQuota = 0
+	}
 	params["name"] = cleanToken.Name
 	if statusOnly != "" {
 		params["from"], params["to"] = previous.Status, cleanToken.Status
