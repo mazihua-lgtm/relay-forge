@@ -1,8 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: 使用文档 / Documentation
-    url: https://docs.newapi.ai/
-    about: 提交 issue 前请先查阅文档，确认现有说明无法解决你的问题。
-  - name: 使用问题 / Usage Questions
-    url: https://deepwiki.com/QuantumNous/new-api
-    about: 使用、配置、接入等问题请优先在 DeepWiki 查询或提问。
+  - name: 使用与部署文档
+    url: https://github.com/mazihua-lgtm/relay-forge/blob/main/README.md
+    about: 提交前先看快速开始与初始化向导说明。
+  - name: 能力与已知限制
+    url: https://github.com/mazihua-lgtm/relay-forge/blob/main/RELAY-FORGE.md
+    about: 收益看板、健康巡检、分销抽成、客户层、终端用户封禁的接口与口径。
+  - name: 安全问题
+    url: https://github.com/mazihua-lgtm/relay-forge/blob/main/.github/SECURITY.md
+    about: 安全漏洞请私下报告，不要开公开 Issue。

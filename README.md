@@ -49,6 +49,7 @@ docker build -t ghcr.io/mazihua-lgtm/relay-forge:latest .
 
 ## 文档
 
+- [CONTRIBUTING.md](./CONTRIBUTING.md)：怎么报问题、提需求、提交 PR，以及合并前必须通过的检查
 - [RELAY-FORGE.md](./RELAY-FORGE.md)：每个新增能力的接口、后台入口、成本口径与已知限制
 - [NOTICE](./NOTICE)：上游版权声明与 AGPLv3 第 7 条附加条款
 - [README.upstream.md](./README.upstream.md)：上游 new-api 的原始说明（归档，用于对照）
