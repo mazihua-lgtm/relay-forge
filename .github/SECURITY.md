@@ -1,112 +1,39 @@
-# Security Policy
+# 安全策略
 
-> [!IMPORTANT]
-> **Bulk Reporting Policy:** If you need to submit multiple vulnerability reports in bulk, **you must contact us first** ([support@quantumnous.com](mailto:support@quantumnous.com)) to coordinate the submission process. Uncoordinated bulk submissions have caused significant disruption to our team, and we will take the following actions:
->
-> 1. **All uncoordinated bulk reports will be closed without review.**
-> 2. **Repeated offenders may be blocked** from further submissions.
->
-> We welcome thorough security research, but please reach out before submitting multiple reports.
+## 报告漏洞
 
-## Supported Versions
+请通过 GitHub 的私密漏洞报告提交：
 
-We provide security updates for the following versions:
+<https://github.com/mazihua-lgtm/relay-forge/security/advisories/new>
 
+**不要**开公开 Issue，也不要在公开渠道贴出利用细节或可复现的凭据。
 
-| Version | Supported          |
-| ------- | ------------------ |
-| Latest  | :white_check_mark: |
-| Older   | :x:                |
+## 支持范围
 
+| 版本 | 是否提供安全更新 |
+| --- | --- |
+| 最新版本 | ✅ |
+| 旧版本 | ❌ |
 
-We strongly recommend that users always use the latest version for the best security and features.
+请始终使用最新版本。
 
-## Frequently Reported Behaviors That Are Expected
+## 哪些问题属于本项目
 
-Check this list before submitting a report. If you find a security impact beyond what an entry describes, please [report it privately](#how-to-report).
+- 本项目新增的能力：收益看板、渠道健康巡检、分销持续抽成、下游客户层、终端用户封禁、初始化向导、`install.sh` 与部署配置。
+- 继承自上游 [new-api](https://github.com/QuantumNous/new-api) 的鉴权、渠道调度、计费与协议转换：请先确认该问题在上游是否同样存在。属于上游的问题请报告给上游项目，本项目会跟随上游修复。
 
-### Midjourney images can be viewed without signing in
+## 已知的设计限制（不属于漏洞）
 
-New API lets anyone who has the image link or knows the task ID on that instance view the corresponding image without an account or API key. Keep this in mind when sharing links or task IDs. Turning off `MjForwardUrlEnabled` changes the URL returned to clients; it does not make images private.
+这些是明确的设计取舍，报告前请先阅读：
 
-This behavior covers viewing the image only. For example, if an unauthenticated caller can also read the task’s private details or modify the task, please report that separately.
+- **`X-End-User` 由调用方自行填写。** 换一个 ID、或者不带这个头，就能绕过封禁。它的用途是让分销商管理自己的终端用户、避免一人违规连累整把 Key，**不是**防滥用机制。
+- **终端用户封禁状态保存在各节点内存中**，数据库只在启动时读取一次。多节点部署时，节点之间不会实时同步封禁。
+- **未初始化的实例允许任何人访问初始化向导并创建首个管理员。** 部署完成后请立即完成初始化；在此之前不要把它暴露在公网，或先只监听 `127.0.0.1`。
+- **收益看板中的「上游成本」有两种来源**：渠道设置了进价倍率的是真实记录，未设置的是按加价倍率倒推的估算。页面会标出当前是哪种，估算值不等于真实利润。
 
-### Site content published by the root role
+## 部署建议
 
-The New API `root` role can publish site content through settings designed for that purpose. For example, the About page supports HTML. A report that only shows this content rendering as intended for visitors does not establish an XSS vulnerability.
-
-Please report cases where someone without permission can control the published content, or where the content bypasses an intended restriction such as HTML sanitization or iframe isolation. Support for HTML does not imply support for arbitrary scripts.
-
-## Reporting a Vulnerability
-
-We take security vulnerability reports very seriously. If you discover a security issue, please follow the steps below for responsible disclosure.
-
-### How to Report
-
-**Do NOT** report security vulnerabilities in public GitHub Issues.
-
-To report a security issue, please use the GitHub Security Advisories tab to "[Open a draft security advisory](https://github.com/QuantumNous/new-api/security/advisories/new)". This is the preferred method as it provides a built-in private communication channel.
-
-Alternatively, you can report via email:
-
-- **Email:** [support@quantumnous.com](mailto:support@quantumnous.com)
-- **Subject:** `[SECURITY] Security Vulnerability Report`
-
-### What to Include
-
-To help us understand and resolve the issue more quickly, please include the following information in your report:
-
-1. **Vulnerability Type** - Brief description of the vulnerability (e.g., SQL injection, XSS, authentication bypass, etc.)
-2. **Affected Component** - Affected file paths, endpoints, or functional modules
-3. **Reproduction Steps** - Detailed steps to reproduce
-4. **Impact Assessment** - Potential security impact and severity assessment
-5. **Proof of Concept** - If possible, provide proof of concept code or screenshots (do not test in production environments)
-6. **Suggested Fix** - If you have a fix suggestion, please provide it
-7. **Your Contact Information** - So we can communicate with you
-
-## Response Process
-
-1. **Acknowledgment:** We will acknowledge receipt of your report within **48 hours**.
-2. **Initial Assessment:** We will complete an initial assessment and communicate with you within **7 days**.
-3. **Fix Development:** Based on the severity of the vulnerability, we will prioritize developing a fix.
-4. **Security Advisory:** After the fix is released, we will publish a security advisory (if applicable).
-5. **Credit:** If you wish, we will credit your contribution in the security advisory.
-
-## Security Best Practices
-
-When deploying and using New API, we recommend following these security best practices:
-
-### Deployment Security
-
-- **Use HTTPS:** Always serve over HTTPS to ensure transport layer security
-- **Firewall Configuration:** Only open necessary ports and restrict access to management interfaces
-- **Regular Updates:** Update to the latest version promptly to receive security patches
-- **Environment Isolation:** Use separate database and Redis instances in production
-
-### API Key Security
-
-- **Key Protection:** Do not expose API keys in client-side code or public repositories
-- **Least Privilege:** Create different API keys for different purposes, following the principle of least privilege
-- **Regular Rotation:** Rotate API keys regularly
-- **Monitor Usage:** Monitor API key usage and detect anomalies promptly
-
-### Database Security
-
-- **Strong Passwords:** Use strong passwords to protect database access
-- **Network Isolation:** Database should not be directly exposed to the public internet
-- **Regular Backups:** Regularly backup the database and verify backup integrity
-- **Access Control:** Limit database user permissions, following the principle of least privilege
-
-## Security-Related Configuration
-
-Please ensure the following security-related environment variables and settings are properly configured:
-
-- `SESSION_SECRET` - Use a strong random string
-- `SQL_DSN` - Ensure database connection uses secure configuration
-- `REDIS_CONN_STRING` - If using Redis, ensure secure connection
-
-For detailed configuration instructions, please refer to the project documentation.
-
-## Disclaimer
-
-This project is provided "as is" without any express or implied warranty. Users should assess the security risks of using this software in their environment.
+- 对外提供服务前配置 HTTPS 反向代理。
+- 用 `./install.sh` 生成 `.env`；不要沿用示例或默认密码。
+- 数据库和 Redis 不要直接暴露到公网。
+- 定期升级到最新版本。

@@ -25,6 +25,17 @@ rand() {
   fi
 }
 
+# 老版本生成的 .env 没有这些键，缺什么补什么，避免升级时启动失败。
+ensure_env_key() {
+  key="$1"
+  if ! grep -q "^${key}=" .env 2>/dev/null; then
+    printf '%s=%s\n' "$key" "$(rand)" >>.env
+    say "已在 .env 中补充 ${key}"
+  fi
+}
+
+requested_port="${PORT:-}"
+
 if [ -f .env ]; then
   say "复用已有的 .env"
   # shellcheck disable=SC1091
@@ -36,13 +47,32 @@ else
 # relay-forge 本地配置，由 install.sh 生成。不要提交到仓库。
 POSTGRES_PASSWORD=$(rand)
 REDIS_PASSWORD=$(rand)
+SESSION_SECRET=$(rand)
 PORT=${PORT:-3000}
 EOF
   umask 022
-  # shellcheck disable=SC1091
-  set -a; . ./.env; set +a
   say "已写入 .env"
 fi
+
+ensure_env_key POSTGRES_PASSWORD
+ensure_env_key REDIS_PASSWORD
+ensure_env_key SESSION_SECRET
+chmod 600 .env 2>/dev/null || true
+
+# shellcheck disable=SC1091
+set -a; . ./.env; set +a
+
+# 命令行显式给的端口优先，并写回 .env，否则下次会被旧值静默覆盖。
+if [ -n "$requested_port" ] && [ "${PORT:-}" != "$requested_port" ]; then
+  if grep -q '^PORT=' .env; then
+    sed -i.bak "s|^PORT=.*|PORT=${requested_port}|" .env && rm -f .env.bak
+  else
+    printf 'PORT=%s\n' "$requested_port" >>.env
+  fi
+  PORT="$requested_port"
+  say "端口改为 ${PORT}（已写回 .env）"
+fi
+export PORT
 
 mkdir -p data logs
 

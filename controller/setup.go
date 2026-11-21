@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -295,6 +296,14 @@ func normalizeSetupModels(raw string) []string {
 // It is read-only and anonymous: it runs before any account exists, and it must
 // not reveal secrets — only whether a dependency is reachable.
 func GetSetupCheck(c *gin.Context) {
+	// Only the wizard needs this. Once the instance is initialized the endpoint
+	// would otherwise expose the database type, the version and Redis errors to
+	// anyone, and every anonymous call writes a probe key.
+	if constant.Setup {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "Not found"})
+		return
+	}
+
 	checks := make([]SetupCheck, 0, 4)
 
 	if model.DB != nil {

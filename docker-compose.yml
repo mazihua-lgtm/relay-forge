@@ -31,12 +31,13 @@ services:
       - ./data:/data
       - ./logs:/app/logs
     environment:
-      - SQL_DSN=postgresql://root:${POSTGRES_PASSWORD:-123456}@postgres:5432/relay-forge
+      - SQL_DSN=postgresql://root:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD 未设置：运行 ./install.sh 或写入 .env}@postgres:5432/relay-forge
 #      - SQL_DSN=root:123456@tcp(mysql:3306)/relay-forge  # Point to the mysql service, uncomment if using MySQL
 #      - LOG_SQL_DSN=postgresql://root:123456@postgres:5432/relay-forge-log # OPTIONAL: If you want a separate database for logging, uncomment and set this
 #      - LOG_SQL_DSN=clickhouse://default:123456@clickhouse:9000/new_api_logs # OPTIONAL: Use ClickHouse for logs only; also uncomment clickhouse in depends_on and the clickhouse service below
 #      - LOG_SQL_CLICKHOUSE_TTL_DAYS=0 # OPTIONAL: ClickHouse log retention days. Unset or 0 disables automatic deletion; set to e.g. 30 to keep 30 days
-      - REDIS_CONN_STRING=redis://:${REDIS_PASSWORD:-123456}@redis:6379
+      - REDIS_CONN_STRING=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD 未设置：运行 ./install.sh 或写入 .env}@redis:6379
+      - SESSION_SECRET=${SESSION_SECRET:?SESSION_SECRET 未设置：运行 ./install.sh 或写入 .env}
       - TZ=Asia/Shanghai
       - ERROR_LOG_ENABLED=true # 是否启用错误日志记录 (Whether to enable error log recording)
       - BATCH_UPDATE_ENABLED=true  # 是否启用批量更新 (Whether to enable batch update)
@@ -72,10 +73,10 @@ services:
       retries: 3
 
   redis:
-    image: redis:latest
+    image: redis:7.4-alpine
     container_name: redis
     restart: always
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-123456}"]
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD 未设置：运行 ./install.sh 或写入 .env}"]
     networks:
       - relay-forge-network
 
@@ -85,7 +86,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: root
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-123456}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD 未设置：运行 ./install.sh 或写入 .env}
       POSTGRES_DB: relay-forge
     volumes:
       - pg_data:/var/lib/postgresql/data
