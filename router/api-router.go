@@ -327,6 +327,14 @@ func SetApiRouter(router *gin.Engine) {
 			endUserRoute.DELETE("/blocks", controller.ClearEndUserBlock)
 		}
 
+		// A reseller manages the suspensions on its own keys only.
+		endUserSelfRoute := apiRouter.Group("/end_user")
+		endUserSelfRoute.Use(middleware.UserAuth())
+		{
+			endUserSelfRoute.GET("/blocks/self", controller.GetMyEndUserBlocks)
+			endUserSelfRoute.DELETE("/blocks/self", middleware.CriticalRateLimit(), controller.ClearMyEndUserBlock)
+		}
+
 		usageRoute := apiRouter.Group("/usage")
 		usageRoute.Use(middleware.CORS(), middleware.CriticalRateLimit())
 		{

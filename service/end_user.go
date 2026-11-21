@@ -228,6 +228,23 @@ func ListEndUserBlocks() []EndUserBlock {
 	return blocks
 }
 
+// ListEndUserBlocksForTokens returns only the blocks that belong to the given
+// keys. A reseller manages its own end users; it must not see another
+// reseller's enforcement records.
+func ListEndUserBlocksForTokens(tokenIds []int) []EndUserBlock {
+	allowed := make(map[int]bool, len(tokenIds))
+	for _, id := range tokenIds {
+		allowed[id] = true
+	}
+	blocks := make([]EndUserBlock, 0)
+	for _, block := range ListEndUserBlocks() {
+		if allowed[block.TokenId] {
+			blocks = append(blocks, block)
+		}
+	}
+	return blocks
+}
+
 // ClearEndUserBlock lifts a block and forgets its refusals.
 func ClearEndUserBlock(tokenId int, modelName string, endUser string) bool {
 	key := endUserKey{TokenId: tokenId, Model: modelName, EndUser: endUser}

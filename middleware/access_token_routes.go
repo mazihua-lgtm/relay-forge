@@ -217,8 +217,10 @@ var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"GET /api/authz/catalog": accessTokenScopeRule("user:read"),
 
 	// router/api-router.go: /api/end_user
-	"GET /api/end_user/blocks":    accessTokenScopeRule("ops:read"),
-	"DELETE /api/end_user/blocks": accessTokenScopeRule("ops:write"),
+	"GET /api/end_user/blocks":         accessTokenScopeRule("ops:read"),
+	"DELETE /api/end_user/blocks":      accessTokenScopeRule("ops:write"),
+	"GET /api/end_user/blocks/self":    accessTokenScopeRule("api_key:read"),
+	"DELETE /api/end_user/blocks/self": accessTokenScopeRule("api_key:write"),
 
 	// router/api-router.go: /api/client
 	"GET /api/client/":       accessTokenScopeRule("api_key:read"),

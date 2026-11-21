@@ -352,6 +352,14 @@ func TransferTokenClient(tokenId int, previousClientId int, usedQuota int64) err
 	})
 }
 
+// GetTokenIdsByUser returns the ids of a user's keys, used to scope end-user
+// enforcement records to the reseller who owns them.
+func GetTokenIdsByUser(userId int) ([]int, error) {
+	var ids []int
+	err := DB.Model(&Token{}).Where("user_id = ?", userId).Pluck("id", &ids).Error
+	return ids, err
+}
+
 func (token *Token) Delete() (err error) {
 	if cacheErr := invalidateTokenCacheForMutation(token.Key); cacheErr != nil {
 		common.SysLog(common.LogText("failed to invalidate token cache before delete: %s", cacheErr.Error()))

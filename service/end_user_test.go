@@ -147,3 +147,20 @@ func TestBlockedEndUserRefusalsStayCapped(t *testing.T) {
 	endUserMu.Unlock()
 	assert.LessOrEqual(t, size, endUserRefusalThreshold)
 }
+
+// A reseller only sees the suspensions on its own keys.
+func TestEndUserBlocksAreScopedToTheCallersTokens(t *testing.T) {
+	ResetEndUserState()
+	t.Cleanup(ResetEndUserState)
+
+	for i := 0; i < endUserRefusalThreshold; i++ {
+		RecordEndUserRefusal(1, "gpt-4o", "user-1")
+		RecordEndUserRefusal(2, "gpt-4o", "user-2")
+	}
+	require.Len(t, ListEndUserBlocks(), 2)
+
+	mine := ListEndUserBlocksForTokens([]int{1})
+	require.Len(t, mine, 1)
+	assert.Equal(t, 1, mine[0].TokenId)
+	assert.Empty(t, ListEndUserBlocksForTokens([]int{99}))
+}
