@@ -24,6 +24,8 @@ export interface Client {
   user_id: number
   name: string
   budget_quota: number
+  // Consumption of keys that were deleted; kept so the total never shrinks.
+  used_quota_snapshot: number
   status: number
   remark: string
   created_time: number
@@ -35,10 +37,17 @@ export interface ClientUsage extends Client {
   used_quota: number
 }
 
+export interface ClientsPage {
+  items: ClientUsage[]
+  total: number
+  page: number
+  page_size: number
+}
+
 export interface ClientsResponse {
   success: boolean
   message?: string
-  data?: ClientUsage[]
+  data?: ClientsPage
 }
 
 export interface ClientResponse {

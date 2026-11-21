@@ -60,8 +60,9 @@ func TestClientLifecycleDatabaseMatrix(t *testing.T) {
 			require.NotZero(t, client.Id)
 
 			// A fresh client has no keys and no consumption.
-			usages, err := GetClientsByUser(1)
+			usages, total, err := GetClientsByUser(1, "", 1, 20)
 			require.NoError(t, err)
+			assert.EqualValues(t, 1, total)
 			require.Len(t, usages, 1)
 			assert.Equal(t, 0, usages[0].KeyCount)
 			assert.EqualValues(t, 0, usages[0].UsedQuota)
@@ -72,7 +73,7 @@ func TestClientLifecycleDatabaseMatrix(t *testing.T) {
 			require.NoError(t, db.Create(&Token{UserId: 1, Key: "k1", ClientId: &clientId, UsedQuota: 1200}).Error)
 			require.NoError(t, db.Create(&Token{UserId: 1, Key: "k2", ClientId: &clientId, UsedQuota: 800}).Error)
 
-			usages, err = GetClientsByUser(1)
+			usages, total, err = GetClientsByUser(1, "", 1, 20)
 			require.NoError(t, err)
 			require.Len(t, usages, 1)
 			assert.Equal(t, 2, usages[0].KeyCount)
@@ -81,7 +82,7 @@ func TestClientLifecycleDatabaseMatrix(t *testing.T) {
 
 			// A soft-deleted key stops counting.
 			require.NoError(t, db.Where("key = ?", "k2").Delete(&Token{}).Error)
-			usages, err = GetClientsByUser(1)
+			usages, total, err = GetClientsByUser(1, "", 1, 20)
 			require.NoError(t, err)
 			assert.Equal(t, 1, usages[0].KeyCount)
 			assert.EqualValues(t, 1200, usages[0].UsedQuota)
@@ -164,4 +165,73 @@ func TestUpdateClientRejectsInvalidValues(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 250, updated.BudgetQuota)
 	assert.Equal(t, ClientStatusDisabled, updated.Status)
+}
+
+// Deleting a key must not erase what it consumed: the client's total keeps it.
+func TestDeletingAKeyKeepsItsUsageInTheClientTotal(t *testing.T) {
+	db := openClientTestDB(t, "sqlite")
+
+	client := Client{UserId: 1, Name: "Acme", BudgetQuota: 10000}
+	require.NoError(t, CreateClient(&client))
+
+	clientId := client.Id
+	token := Token{UserId: 1, Key: "k-keep", ClientId: &clientId, RemainQuota: 4000, UsedQuota: 1200}
+	require.NoError(t, db.Create(&token).Error)
+
+	usages, _, err := GetClientsByUser(1, "", 1, 20)
+	require.NoError(t, err)
+	require.Len(t, usages, 1)
+	assert.EqualValues(t, 1200, usages[0].UsedQuota)
+
+	require.NoError(t, token.Delete())
+
+	usages, _, err = GetClientsByUser(1, "", 1, 20)
+	require.NoError(t, err)
+	require.Len(t, usages, 1)
+	assert.Equal(t, 0, usages[0].KeyCount, "the key is gone")
+	assert.EqualValues(t, 1200, usages[0].UsedQuota, "its usage is not")
+}
+
+func TestGetClientCommittedQuota(t *testing.T) {
+	db := openClientTestDB(t, "sqlite")
+
+	client := Client{UserId: 1, Name: "Acme", BudgetQuota: 10000}
+	require.NoError(t, CreateClient(&client))
+
+	clientId := client.Id
+	require.NoError(t, db.Create(&Token{UserId: 1, Key: "a", ClientId: &clientId, RemainQuota: 500, UsedQuota: 100}).Error)
+	require.NoError(t, db.Create(&Token{UserId: 1, Key: "b", ClientId: &clientId, RemainQuota: 700, UsedQuota: 50}).Error)
+
+	committed, err := GetClientCommittedQuota(client.Id, 0)
+	require.NoError(t, err)
+	assert.EqualValues(t, 1350, committed)
+
+	// Excluding a key leaves the other one in the total.
+	committed, err = GetClientCommittedQuota(client.Id, 1)
+	require.NoError(t, err)
+	assert.EqualValues(t, 750, committed)
+}
+
+func TestClientListPaginatesAndFiltersByKeyword(t *testing.T) {
+	openClientTestDB(t, "sqlite")
+
+	for _, name := range []string{"Acme", "Beta", "Acme Labs"} {
+		client := Client{UserId: 1, Name: name, BudgetQuota: 100}
+		require.NoError(t, CreateClient(&client))
+	}
+
+	firstPage, total, err := GetClientsByUser(1, "", 1, 2)
+	require.NoError(t, err)
+	assert.EqualValues(t, 3, total)
+	assert.Len(t, firstPage, 2)
+
+	secondPage, total, err := GetClientsByUser(1, "", 2, 2)
+	require.NoError(t, err)
+	assert.EqualValues(t, 3, total)
+	assert.Len(t, secondPage, 1)
+
+	filtered, total, err := GetClientsByUser(1, "Acme", 1, 20)
+	require.NoError(t, err)
+	assert.EqualValues(t, 2, total)
+	assert.Len(t, filtered, 2)
 }

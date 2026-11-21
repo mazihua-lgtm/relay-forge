@@ -313,9 +313,9 @@ func SetApiRouter(router *gin.Engine) {
 		clientRoute.Use(middleware.UserAuth())
 		{
 			clientRoute.GET("/", controller.GetAllClients)
-			clientRoute.POST("/", controller.AddClient)
-			clientRoute.PUT("/:id", controller.UpdateClient)
-			clientRoute.DELETE("/:id", controller.DeleteClient)
+			clientRoute.POST("/", middleware.CriticalRateLimit(), controller.AddClient)
+			clientRoute.PUT("/:id", middleware.CriticalRateLimit(), controller.UpdateClient)
+			clientRoute.DELETE("/:id", middleware.CriticalRateLimit(), controller.DeleteClient)
 		}
 
 		// End-user enforcement records: which key × model × end user is

@@ -20,8 +20,18 @@ import { api } from '@/lib/api'
 
 import type { ClientResponse, ClientsResponse } from './types'
 
-export async function getClients(): Promise<ClientsResponse> {
-  const res = await api.get('/api/client/')
+export async function getClients(params?: {
+  page?: number
+  pageSize?: number
+  keyword?: string
+}): Promise<ClientsResponse> {
+  const res = await api.get('/api/client/', {
+    params: {
+      p: params?.page ?? 1,
+      page_size: params?.pageSize ?? 20,
+      keyword: params?.keyword ?? '',
+    },
+  })
   return res.data
 }
 

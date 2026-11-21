@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/mazihua-lgtm/relay-forge/common"
+	"gorm.io/gorm"
 )
 
 // Client status values. They are deliberately separate from the user and
@@ -23,10 +24,14 @@ type Client struct {
 	UserId      int    `json:"user_id" gorm:"index"`
 	Name        string `json:"name" gorm:"type:varchar(64);not null"`
 	BudgetQuota int    `json:"budget_quota" gorm:"bigint;default:0"`
-	Status      int    `json:"status" gorm:"default:1"`
-	Remark      string `json:"remark" gorm:"type:varchar(255);default:''"`
-	CreatedTime int64  `json:"created_time" gorm:"bigint"`
-	UpdatedTime int64  `json:"updated_time" gorm:"bigint"`
+	// UsedQuotaSnapshot keeps the consumption of keys that were deleted. Without
+	// it, deleting a key would silently erase that usage from the client's total
+	// and overstate the margin.
+	UsedQuotaSnapshot int64  `json:"used_quota_snapshot" gorm:"bigint;default:0"`
+	Status            int    `json:"status" gorm:"default:1"`
+	Remark            string `json:"remark" gorm:"type:varchar(255);default:''"`
+	CreatedTime       int64  `json:"created_time" gorm:"bigint"`
+	UpdatedTime       int64  `json:"updated_time" gorm:"bigint"`
 }
 
 // ClientUsage is a client plus what its keys have consumed.
@@ -75,14 +80,25 @@ func GetClientById(userId int, id int) (*Client, error) {
 // consumption. Aggregation happens in a second query rather than a GROUP BY on
 // the client row, which keeps the result identical on SQLite, MySQL and
 // PostgreSQL.
-func GetClientsByUser(userId int) ([]ClientUsage, error) {
+func GetClientsByUser(userId int, keyword string, page int, pageSize int) ([]ClientUsage, int64, error) {
+	query := DB.Model(&Client{}).Where("user_id = ?", userId)
+	if trimmed := strings.TrimSpace(keyword); trimmed != "" {
+		query = query.Where("name LIKE ?", "%"+trimmed+"%")
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
 	var clients []Client
-	if err := DB.Where("user_id = ?", userId).Order("id DESC").Find(&clients).Error; err != nil {
-		return nil, err
+	offset := (page - 1) * pageSize
+	if err := query.Order("id DESC").Offset(offset).Limit(pageSize).Find(&clients).Error; err != nil {
+		return nil, 0, err
 	}
 	usages := make([]ClientUsage, 0, len(clients))
 	if len(clients) == 0 {
-		return usages, nil
+		return usages, total, nil
 	}
 
 	ids := make([]int, 0, len(clients))
@@ -97,7 +113,7 @@ func GetClientsByUser(userId int) ([]ClientUsage, error) {
 		Group("client_id").
 		Scan(&aggregates).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	byClient := make(map[int]clientKeyAggregate, len(aggregates))
@@ -111,9 +127,40 @@ func GetClientsByUser(userId int) ([]ClientUsage, error) {
 			usage.KeyCount = aggregate.KeyCount
 			usage.UsedQuota = aggregate.UsedQuota
 		}
+		usage.UsedQuota += client.UsedQuotaSnapshot
 		usages = append(usages, usage)
 	}
-	return usages, nil
+	return usages, total, nil
+}
+
+// GetClientCommittedQuota returns what the client's keys have committed: each
+// live key's remaining plus used quota, plus the snapshot of deleted keys. A new
+// or edited key must keep the total within the client's budget.
+func GetClientCommittedQuota(clientId int, excludeTokenId int) (int64, error) {
+	query := DB.Model(&Token{}).Where("client_id = ?", clientId)
+	if excludeTokenId > 0 {
+		query = query.Where("id <> ?", excludeTokenId)
+	}
+
+	var committed int64
+	if err := query.Select("COALESCE(SUM(remain_quota + used_quota), 0)").Scan(&committed).Error; err != nil {
+		return 0, err
+	}
+
+	var client Client
+	if err := DB.Select("used_quota_snapshot").Where("id = ?", clientId).First(&client).Error; err != nil {
+		return 0, err
+	}
+	return committed + client.UsedQuotaSnapshot, nil
+}
+
+// AddClientUsedQuota folds a deleted key's consumption into the client total.
+func AddClientUsedQuota(clientId int, delta int64) error {
+	if clientId == 0 || delta <= 0 {
+		return nil
+	}
+	return DB.Model(&Client{}).Where("id = ?", clientId).
+		UpdateColumn("used_quota_snapshot", gorm.Expr("used_quota_snapshot + ?", delta)).Error
 }
 
 // UpdateClient applies the editable fields of a client the reseller owns.

@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Search } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -29,6 +29,7 @@ import { LoadingState } from '@/components/loading-state'
 import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { formatQuotaWithCurrency } from '@/lib/currency'
 import { handleServerError } from '@/lib/handle-server-error'
 import { requireServerSuccess } from '@/lib/server-error-message'
@@ -41,17 +42,26 @@ import {
   type ClientUsage,
 } from './types'
 
+const PAGE_SIZE = 12
+
 export function Clients() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [createOpen, setCreateOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<ClientUsage | null>(null)
+  const [page, setPage] = useState(1)
+  const [keywordInput, setKeywordInput] = useState('')
+  const [keyword, setKeyword] = useState('')
 
   const clientsQuery = useQuery({
-    queryKey: ['clients'],
+    queryKey: ['clients', page, keyword],
     queryFn: async () => {
-      const response = requireServerSuccess(await getClients())
-      return response.data ?? []
+      const response = requireServerSuccess(
+        await getClients({ page, pageSize: PAGE_SIZE, keyword })
+      )
+      return (
+        response.data ?? { items: [], total: 0, page: 1, page_size: PAGE_SIZE }
+      )
     },
   })
 
@@ -95,7 +105,14 @@ export function Clients() {
     onError: (error) => handleServerError(error, t('Failed to delete client')),
   })
 
-  const clients = clientsQuery.data ?? []
+  const clients = clientsQuery.data?.items ?? []
+  const total = clientsQuery.data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  const submitSearch = () => {
+    setPage(1)
+    setKeyword(keywordInput.trim())
+  }
 
   return (
     <div className='space-y-6'>
@@ -110,10 +127,30 @@ export function Clients() {
             )}
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className='mr-2 size-4' />
-          {t('New client')}
-        </Button>
+        <div className='flex flex-wrap items-center gap-2'>
+          <form
+            className='flex items-center gap-2'
+            onSubmit={(event) => {
+              event.preventDefault()
+              submitSearch()
+            }}
+          >
+            <Input
+              value={keywordInput}
+              onChange={(event) => setKeywordInput(event.target.value)}
+              placeholder={t('Search by name')}
+              className='w-48'
+            />
+            <Button type='submit' variant='outline' size='icon'>
+              <Search className='size-4' />
+              <span className='sr-only'>{t('Search')}</span>
+            </Button>
+          </form>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className='mr-2 size-4' />
+            {t('New client')}
+          </Button>
+        </div>
       </div>
 
       {clientsQuery.isLoading && <LoadingState />}
@@ -145,6 +182,34 @@ export function Clients() {
           />
         ))}
       </div>
+
+      {total > PAGE_SIZE && (
+        <div className='flex items-center justify-end gap-3'>
+          <span className='text-muted-foreground text-sm'>
+            {t('Page {{page}} of {{total}}', { page, total: totalPages })}
+          </span>
+          <Button
+            variant='outline'
+            size='icon'
+            disabled={page <= 1}
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+          >
+            <ChevronLeft className='size-4' />
+            <span className='sr-only'>{t('Previous page')}</span>
+          </Button>
+          <Button
+            variant='outline'
+            size='icon'
+            disabled={page >= totalPages}
+            onClick={() =>
+              setPage((current) => Math.min(totalPages, current + 1))
+            }
+          >
+            <ChevronRight className='size-4' />
+            <span className='sr-only'>{t('Next page')}</span>
+          </Button>
+        </div>
+      )}
 
       <ClientFormDialog
         open={createOpen}
@@ -190,6 +255,7 @@ function ClientCard(props: ClientCardProps) {
   const { t } = useTranslation()
   const enabled = props.client.status === CLIENT_STATUS_ENABLED
   const margin = props.client.budget_quota - props.client.used_quota
+  const overBudget = margin < 0
 
   return (
     <Card>
@@ -221,7 +287,7 @@ function ClientCard(props: ClientCardProps) {
             <dt className='text-muted-foreground text-xs'>{t('Margin')}</dt>
             <dd
               className={
-                margin < 0 ? 'text-destructive font-semibold' : 'font-semibold'
+                overBudget ? 'text-destructive font-semibold' : 'font-semibold'
               }
             >
               {formatQuotaWithCurrency(margin)}
@@ -232,6 +298,12 @@ function ClientCard(props: ClientCardProps) {
             <dd className='font-semibold'>{props.client.key_count}</dd>
           </div>
         </dl>
+
+        {overBudget && (
+          <p className='text-destructive text-xs font-medium'>
+            {t('Over budget: this client has used more than it paid for.')}
+          </p>
+        )}
 
         {props.client.remark && (
           <p className='text-muted-foreground line-clamp-2 text-xs'>

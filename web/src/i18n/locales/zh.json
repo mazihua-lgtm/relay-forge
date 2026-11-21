@@ -7873,6 +7873,9 @@
     "For example: Acme Corp": "例如：某某公司",
     "Select a client": "选择客户",
     "No client": "不属于任何客户",
-    "File this key under a downstream client so its usage counts toward that client.": "把这个 Key 归到某个下游客户名下，它的用量就计入该客户。"
+    "File this key under a downstream client so its usage counts toward that client.": "把这个 Key 归到某个下游客户名下，它的用量就计入该客户。",
+    "Search by name": "按名称搜索",
+    "Page {{page}} of {{total}}": "第 {{page}} / {{total}} 页",
+    "Over budget: this client has used more than it paid for.": "已超支：该客户的用量超过了它支付的金额。"
   }
 }

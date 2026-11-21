@@ -7873,6 +7873,9 @@
     "For example: Acme Corp": "For example: Acme Corp",
     "Select a client": "Select a client",
     "No client": "No client",
-    "File this key under a downstream client so its usage counts toward that client.": "File this key under a downstream client so its usage counts toward that client."
+    "File this key under a downstream client so its usage counts toward that client.": "File this key under a downstream client so its usage counts toward that client.",
+    "Search by name": "Search by name",
+    "Page {{page}} of {{total}}": "Page {{page}} of {{total}}",
+    "Over budget: this client has used more than it paid for.": "Over budget: this client has used more than it paid for."
   }
 }

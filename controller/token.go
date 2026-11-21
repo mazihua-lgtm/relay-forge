@@ -311,8 +311,13 @@ func AddToken(c *gin.Context) {
 	// A key may only be filed under a client the caller owns; otherwise one
 	// reseller could attach keys to another's customer.
 	if token.ClientId != nil {
-		if _, err := model.GetClientById(c.GetInt("id"), *token.ClientId); err != nil {
+		client, err := model.GetClientById(c.GetInt("id"), *token.ClientId)
+		if err != nil {
 			common.ApiErrorT(c, "Client not found")
+			return
+		}
+		if err := validateClientKeyQuota(client, 0, token.UnlimitedQuota, token.RemainQuota); err != nil {
+			common.ApiError(c, err)
 			return
 		}
 	}
@@ -480,6 +485,17 @@ func UpdateToken(c *gin.Context) {
 					return
 				}
 				cleanToken.ClientId = token.ClientId
+			}
+		}
+		if cleanToken.ClientId != nil {
+			client, err := model.GetClientById(userId, *cleanToken.ClientId)
+			if err != nil {
+				common.ApiErrorT(c, "Client not found")
+				return
+			}
+			if err := validateClientKeyQuota(client, cleanToken.Id, cleanToken.UnlimitedQuota, cleanToken.RemainQuota); err != nil {
+				common.ApiError(c, err)
+				return
 			}
 		}
 		cleanToken.CrossGroupRetry = token.CrossGroupRetry

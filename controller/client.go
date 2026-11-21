@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -38,12 +39,26 @@ type clientUpdateRequest struct {
 // GetAllClients lists the caller's downstream customers with their key count
 // and consumption. It never returns another reseller's clients.
 func GetAllClients(c *gin.Context) {
-	usages, err := model.GetClientsByUser(c.GetInt("id"))
+	page, _ := strconv.Atoi(c.DefaultQuery("p", "1"))
+	if page < 1 {
+		page = 1
+	}
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	usages, total, err := model.GetClientsByUser(c.GetInt("id"), c.Query("keyword"), page, pageSize)
 	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
-	common.ApiSuccess(c, usages)
+	common.ApiSuccess(c, gin.H{
+		"items":     usages,
+		"total":     total,
+		"page":      page,
+		"page_size": pageSize,
+	})
 }
 
 func AddClient(c *gin.Context) {
@@ -134,6 +149,28 @@ func normalizeClientName(raw string) (string, error) {
 		return "", errClientNameTooLong
 	}
 	return name, nil
+}
+
+// validateClientKeyQuota keeps a client's keys within its budget. Committed
+// quota counts each live key's remaining plus used amount, and the snapshot of
+// deleted keys, so editing a key cannot silently overbook the budget.
+func validateClientKeyQuota(client *model.Client, excludeTokenId int, unlimited bool, remainQuota int) error {
+	if unlimited {
+		return errors.New("a key filed under a client cannot have unlimited quota")
+	}
+	if remainQuota < 0 {
+		return errors.New("quota cannot be negative")
+	}
+
+	committed, err := model.GetClientCommittedQuota(client.Id, excludeTokenId)
+	if err != nil {
+		return err
+	}
+	budget := int64(client.BudgetQuota)
+	if committed+int64(remainQuota) > budget {
+		return fmt.Errorf("quota exceeds the client's remaining budget: %d of %d already committed", committed, budget)
+	}
+	return nil
 }
 
 func validateClientBudget(budget int) error {

@@ -336,6 +336,12 @@ func (token *Token) Delete() (err error) {
 	if cacheErr := invalidateTokenCacheForMutation(token.Key); cacheErr != nil {
 		common.SysLog(common.LogText("failed to invalidate token cache before delete: %s", cacheErr.Error()))
 	}
+	// Keep the client's total intact: the key disappears, its consumption does not.
+	if token.ClientId != nil {
+		if err := AddClientUsedQuota(*token.ClientId, int64(token.UsedQuota)); err != nil {
+			return err
+		}
+	}
 	return DB.Delete(token).Error
 }
 
@@ -464,6 +470,17 @@ func BatchDeleteTokens(ids []int, userId int) (int, error) {
 	}
 	if err := invalidateTokensCache(tokens); err != nil {
 		common.SysLog(common.LogText("failed to invalidate token cache before batch delete: %s", err.Error()))
+	}
+
+	for _, token := range tokens {
+		if token.ClientId == nil || token.UsedQuota <= 0 {
+			continue
+		}
+		if err := tx.Model(&Client{}).Where("id = ?", *token.ClientId).
+			UpdateColumn("used_quota_snapshot", gorm.Expr("used_quota_snapshot + ?", token.UsedQuota)).Error; err != nil {
+			tx.Rollback()
+			return 0, err
+		}
 	}
 
 	if err := tx.Where("user_id = ? AND id IN (?)", userId, ids).Delete(&Token{}).Error; err != nil {

@@ -152,7 +152,7 @@ export function ApiKeysMutateDrawer({
     enabled: open,
     staleTime: 0,
   })
-  const clients = clientsData?.data ?? []
+  const clients = clientsData?.data?.items ?? []
 
   const {
     data: apiKeyData,
