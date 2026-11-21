@@ -7843,6 +7843,16 @@
     "Logo must be an http(s) URL or an absolute path": "Logo must be an http(s) URL or an absolute path",
     "Environment checks": "Environment checks",
     "Checking…": "Checking…",
-    "Could not run the environment checks.": "Could not run the environment checks."
+    "Could not run the environment checks.": "Could not run the environment checks.",
+    "First upstream channel": "First upstream channel",
+    "Connect a provider so the site can serve requests": "Connect a provider so the site can serve requests",
+    "Connect one upstream now so the site can serve requests. You can add more channels later.": "Connect one upstream now so the site can serve requests. You can add more channels later.",
+    "OpenAI compatible": "OpenAI compatible",
+    "Leave the API key empty to skip this step.": "Leave the API key empty to skip this step.",
+    "Channel name": "Channel name",
+    "Optional. Defaults to the channel type name.": "Optional. Defaults to the channel type name.",
+    "Optional. Leave empty to use the provider default.": "Optional. Leave empty to use the provider default.",
+    "Comma separated. At least one model is required once a key is set.": "Comma separated. At least one model is required once a key is set.",
+    "List at least one model for this channel": "List at least one model for this channel"
   }
 }

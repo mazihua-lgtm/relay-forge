@@ -35,6 +35,12 @@ export interface SetupFormValues {
   // Optional white-label values. Empty means "keep the built-in defaults".
   siteName: string
   logo: string
+  // Optional first upstream channel. An empty key skips channel creation.
+  channelType: number
+  channelName: string
+  channelBaseURL: string
+  channelKey: string
+  channelModels: string
 }
 
 export type SetupCheckStatus = 'ok' | 'warning' | 'error'

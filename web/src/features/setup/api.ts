@@ -56,11 +56,22 @@ export function buildSetupPayload(
 ) {
   const { usageMode, ...rest } = values
 
+  const channelKey = values.channelKey.trim()
+
   const basePayload = {
     SelfUseModeEnabled: usageMode === 'self',
     DemoSiteEnabled: usageMode === 'demo',
     siteName: values.siteName.trim(),
     logo: values.logo.trim(),
+    firstChannel: channelKey
+      ? {
+          name: values.channelName.trim(),
+          type: values.channelType,
+          base_url: values.channelBaseURL.trim(),
+          key: channelKey,
+          models: values.channelModels.trim(),
+        }
+      : undefined,
   }
 
   if (rootInitialized) {

@@ -146,6 +146,27 @@ export function CompleteStep({ status, values }: CompleteStepProps) {
             </>
           )}
 
+          {values.channelKey.trim() && (
+            <>
+              <Separator />
+              <div className='space-y-1.5'>
+                <dt className='text-muted-foreground text-xs font-medium tracking-wide uppercase'>
+                  {t('First upstream channel')}
+                </dt>
+                <dd className='text-sm font-semibold'>
+                  {t(
+                    values.channelType === 14
+                      ? 'Anthropic'
+                      : 'OpenAI compatible'
+                  )}
+                  {values.channelModels.trim()
+                    ? ` · ${values.channelModels.trim()}`
+                    : ''}
+                </dd>
+              </div>
+            </>
+          )}
+
           <Separator />
 
           <div className='space-y-3'>

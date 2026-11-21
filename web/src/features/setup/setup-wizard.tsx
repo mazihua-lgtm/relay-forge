@@ -44,6 +44,7 @@ import { cn } from '@/lib/utils'
 
 import { buildSetupPayload, getSetupStatus, submitSetup } from './api'
 import { AdminStep } from './components/admin-step'
+import { ChannelStep } from './components/channel-step'
 import { CompleteStep } from './components/complete-step'
 import { DatabaseStep } from './components/database-step'
 import { SiteStep } from './components/site-step'
@@ -59,6 +60,10 @@ const STEPS = [
   {
     titleKey: 'Site identity',
     descriptionKey: 'Name and logo your users will see',
+  },
+  {
+    titleKey: 'First upstream channel',
+    descriptionKey: 'Connect a provider so the site can serve requests',
   },
   {
     titleKey: 'Administrator account',
@@ -81,6 +86,11 @@ const DEFAULT_FORM_VALUES: SetupFormValues = {
   usageMode: 'external',
   siteName: '',
   logo: '',
+  channelType: 1,
+  channelName: '',
+  channelBaseURL: '',
+  channelKey: '',
+  channelModels: '',
 }
 
 export function SetupWizard() {
@@ -205,6 +215,9 @@ export function SetupWizard() {
       return <SiteStep form={form} />
     }
     if (currentStep === 2) {
+      return <ChannelStep form={form} />
+    }
+    if (currentStep === 3) {
       return (
         <AdminStep
           form={form}
@@ -212,7 +225,7 @@ export function SetupWizard() {
         />
       )
     }
-    if (currentStep === 3) {
+    if (currentStep === 4) {
       return <UsageModeStep form={form} />
     }
     return <CompleteStep status={setupStatus} values={watchedValues} />
@@ -229,6 +242,24 @@ export function SetupWizard() {
         message: t('Logo must be an http(s) URL or an absolute path'),
       })
       toast.error(t('Logo must be an http(s) URL or an absolute path'))
+      return false
+    }
+
+    return true
+  }
+
+  const validateChannelStep = () => {
+    const key = form.getValues('channelKey')?.trim()
+    // An empty key means the operator skipped the step on purpose.
+    if (!key) return true
+
+    const models = form.getValues('channelModels')?.trim()
+    if (!models) {
+      form.setError('channelModels', {
+        type: 'manual',
+        message: t('List at least one model for this channel'),
+      })
+      toast.error(t('List at least one model for this channel'))
       return false
     }
 
@@ -287,8 +318,9 @@ export function SetupWizard() {
 
   const handleNextStep = () => {
     if (currentStep === 1 && !validateSiteStep()) return
-    if (currentStep === 2 && !validateAdminStep()) return
-    if (currentStep === 3 && !validateUsageModeStep()) return
+    if (currentStep === 2 && !validateChannelStep()) return
+    if (currentStep === 3 && !validateAdminStep()) return
+    if (currentStep === 4 && !validateUsageModeStep()) return
 
     setCurrentStep((step) => Math.min(step + 1, STEPS.length - 1))
   }
@@ -299,9 +331,10 @@ export function SetupWizard() {
 
   const handleSubmit = async () => {
     const siteValid = validateSiteStep()
+    const channelValid = validateChannelStep()
     const adminValid = validateAdminStep()
     const usageValid = validateUsageModeStep()
-    if (!siteValid || !adminValid || !usageValid) return
+    if (!siteValid || !channelValid || !adminValid || !usageValid) return
 
     const payload = buildSetupPayload(
       form.getValues(),
@@ -354,7 +387,7 @@ export function SetupWizard() {
           </CardHeader>
 
           <CardContent className='space-y-6'>
-            <ol className='grid gap-3 sm:grid-cols-5'>
+            <ol className='grid gap-3 sm:grid-cols-3 lg:grid-cols-6'>
               {STEPS.map((step, index) => {
                 const isActive = currentStep === index
                 const isCompleted = currentStep > index

@@ -7843,6 +7843,16 @@
     "Logo must be an http(s) URL or an absolute path": "標誌網址必須是 http(s) 連結或以 / 開頭的路徑",
     "Environment checks": "環境自我檢查",
     "Checking…": "檢查中…",
-    "Could not run the environment checks.": "環境自我檢查未能完成。"
+    "Could not run the environment checks.": "環境自我檢查未能完成。",
+    "First upstream channel": "首個上游渠道",
+    "Connect a provider so the site can serve requests": "接一個上游，站點就能對外提供服務",
+    "Connect one upstream now so the site can serve requests. You can add more channels later.": "現在接一個上游，站點就能開始服務；之後可以再加更多渠道。",
+    "OpenAI compatible": "OpenAI 相容",
+    "Leave the API key empty to skip this step.": "留空 API Key 即跳過這一步。",
+    "Channel name": "渠道名稱",
+    "Optional. Defaults to the channel type name.": "可選，預設用渠道類型名稱。",
+    "Optional. Leave empty to use the provider default.": "可選，留空則用服務商預設位址。",
+    "Comma separated. At least one model is required once a key is set.": "用逗號分隔；填了 Key 就必須至少填一個模型。",
+    "List at least one model for this channel": "這個渠道至少要填一個模型"
   }
 }

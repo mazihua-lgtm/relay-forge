@@ -29,7 +29,25 @@ type SetupRequest struct {
 	// SiteName and Logo are optional; when empty the built-in defaults stay.
 	SiteName string `json:"siteName"`
 	Logo     string `json:"logo"`
+	// FirstChannel is optional. An empty or missing key means "skip this step";
+	// the operator can add channels later from the admin panel.
+	FirstChannel *SetupChannel `json:"firstChannel"`
 }
+
+// SetupChannel is the first upstream the wizard creates. Only the two channel
+// types that cover almost every relay deployment are offered here; anything
+// else is configured in the admin panel.
+type SetupChannel struct {
+	Name    string `json:"name"`
+	Type    int    `json:"type"`
+	BaseURL string `json:"base_url"`
+	Key     string `json:"key"`
+	Models  string `json:"models"`
+}
+
+// setupChannelMaxModels bounds the comma separated model list so a pasted
+// catalogue cannot bloat the channel row.
+const setupChannelMaxModels = 200
 
 // SetupCheck is one line of the post-install self check.
 type SetupCheck struct {
@@ -130,6 +148,11 @@ func PostSetup(c *gin.Context) {
 		return
 	}
 
+	if err := applySetupFirstChannel(req.FirstChannel); err != nil {
+		common.ApiErrorT(c, "Failed to create the first channel: {{error}}", map[string]any{"error": err.Error()})
+		return
+	}
+
 	// Set operation modes
 	operation_setting.SelfUseModeEnabled = req.SelfUseModeEnabled
 	operation_setting.DemoSiteEnabled = req.DemoSiteEnabled
@@ -188,6 +211,84 @@ func applySetupSiteOptions(req SetupRequest) error {
 		return errors.New("logo must be an http(s) URL or an absolute path")
 	}
 	return model.UpdateOption("Logo", logo)
+}
+
+// applySetupFirstChannel creates the optional starter channel. A blank key means
+// the operator skipped the step, which is not an error: a station can be brought
+// up first and connected to an upstream afterwards.
+func applySetupFirstChannel(req *SetupChannel) error {
+	if req == nil {
+		return nil
+	}
+	key := strings.TrimSpace(req.Key)
+	if key == "" {
+		return nil
+	}
+
+	if req.Type != constant.ChannelTypeOpenAI && req.Type != constant.ChannelTypeAnthropic {
+		return errors.New("the first channel must be OpenAI-compatible or Anthropic")
+	}
+
+	models := normalizeSetupModels(req.Models)
+	if len(models) == 0 {
+		return errors.New("at least one model is required")
+	}
+	if len(models) > setupChannelMaxModels {
+		return fmt.Errorf("at most %d models can be listed", setupChannelMaxModels)
+	}
+
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		name = constant.GetChannelTypeName(req.Type)
+	}
+	if utf8.RuneCountInString(name) > 64 {
+		return errors.New("channel name must be 64 characters or fewer")
+	}
+
+	var baseURL *string
+	if raw := strings.TrimSpace(req.BaseURL); raw != "" {
+		if utf8.RuneCountInString(raw) > 512 {
+			return errors.New("base URL must be 512 characters or fewer")
+		}
+		if !strings.HasPrefix(raw, "http://") && !strings.HasPrefix(raw, "https://") {
+			return errors.New("base URL must start with http:// or https://")
+		}
+		baseURL = &raw
+	}
+
+	testModel := models[0]
+	channel := model.Channel{
+		Type:        req.Type,
+		Key:         key,
+		Status:      common.ChannelStatusEnabled,
+		Name:        name,
+		BaseURL:     baseURL,
+		Models:      strings.Join(models, ","),
+		Group:       "default",
+		CreatedTime: common.GetTimestamp(),
+		TestModel:   &testModel,
+	}
+	if err := channel.Insert(); err != nil {
+		return err
+	}
+	model.InitChannelCache()
+	return nil
+}
+
+// normalizeSetupModels trims the comma separated list, drops blanks and
+// duplicates while keeping the operator's order.
+func normalizeSetupModels(raw string) []string {
+	seen := make(map[string]bool)
+	models := make([]string, 0)
+	for _, part := range strings.Split(raw, ",") {
+		name := strings.TrimSpace(part)
+		if name == "" || seen[name] {
+			continue
+		}
+		seen[name] = true
+		models = append(models, name)
+	}
+	return models
 }
 
 // GetSetupCheck reports what the freshly installed instance can and cannot do.
