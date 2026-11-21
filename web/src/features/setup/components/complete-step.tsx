@@ -16,13 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useQuery } from '@tanstack/react-query'
 import { CheckCircle2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { StatusBadge } from '@/components/status-badge'
 import { Separator } from '@/components/ui/separator'
+import { requireServerSuccess } from '@/lib/server-error-message'
 
-import type { SetupFormValues, SetupStatus } from '../types'
+import { getSetupChecks } from '../api'
+import type { SetupCheck, SetupFormValues, SetupStatus } from '../types'
 
 interface CompleteStepProps {
   status?: SetupStatus
@@ -44,11 +47,36 @@ const DATABASE_VARIANT: Record<
   postgres: 'success',
 }
 
+const CHECK_VARIANT: Record<
+  SetupCheck['status'],
+  'success' | 'warning' | 'danger'
+> = {
+  ok: 'success',
+  warning: 'warning',
+  error: 'danger',
+}
+
+const CHECK_LABEL_KEYS: Record<string, string> = {
+  database: 'Database',
+  redis: 'Redis',
+  https: 'HTTPS',
+  version: 'Version',
+}
+
 export function CompleteStep({ status, values }: CompleteStepProps) {
   const { t } = useTranslation()
   const usageLabelKey = USAGE_MODE_LABEL_KEYS[values.usageMode]
   const dbType = status?.database_type ?? 'Unknown'
   const databaseVariant = DATABASE_VARIANT[dbType.toLowerCase()] ?? 'neutral'
+
+  const checksQuery = useQuery({
+    queryKey: ['setup-checks'],
+    queryFn: async () => {
+      const response = requireServerSuccess(await getSetupChecks())
+      return response.data ?? []
+    },
+    retry: false,
+  })
 
   return (
     <div className='flex flex-col items-center gap-6 text-center'>
@@ -102,6 +130,58 @@ export function CompleteStep({ status, values }: CompleteStepProps) {
               {t('Usage mode')}
             </dt>
             <dd className='text-sm font-semibold'>{t(usageLabelKey)}</dd>
+          </div>
+
+          {values.siteName.trim() && (
+            <>
+              <Separator />
+              <div className='space-y-1.5'>
+                <dt className='text-muted-foreground text-xs font-medium tracking-wide uppercase'>
+                  {t('Site name')}
+                </dt>
+                <dd className='text-sm font-semibold'>
+                  {values.siteName.trim()}
+                </dd>
+              </div>
+            </>
+          )}
+
+          <Separator />
+
+          <div className='space-y-3'>
+            <dt className='text-muted-foreground text-xs font-medium tracking-wide uppercase'>
+              {t('Environment checks')}
+            </dt>
+            <dd className='space-y-2'>
+              {checksQuery.isLoading && (
+                <p className='text-muted-foreground text-sm'>
+                  {t('Checking…')}
+                </p>
+              )}
+              {checksQuery.isError && (
+                <p className='text-muted-foreground text-sm'>
+                  {t('Could not run the environment checks.')}
+                </p>
+              )}
+              {checksQuery.data?.map((check) => (
+                <div
+                  key={check.key}
+                  className='flex flex-wrap items-center gap-2'
+                >
+                  <span className='w-24 text-sm font-medium'>
+                    {t(CHECK_LABEL_KEYS[check.key] ?? check.key)}
+                  </span>
+                  <StatusBadge
+                    label={check.status}
+                    variant={CHECK_VARIANT[check.status]}
+                    copyable={false}
+                  />
+                  <span className='text-muted-foreground text-xs'>
+                    {check.detail}
+                  </span>
+                </div>
+              ))}
+            </dd>
           </div>
         </dl>
       </div>

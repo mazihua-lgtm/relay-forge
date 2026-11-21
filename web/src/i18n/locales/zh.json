@@ -7832,6 +7832,17 @@
     "Zhipu": "智谱",
     "Zhipu GLM": "智谱GLM",
     "Zhipu V4": "智谱 V4",
-    "Zoom": "缩放"
+    "Zoom": "缩放",
+    "Site identity": "站点信息",
+    "Name and logo your users will see": "用户看到的名称与标志",
+    "Both fields are optional. Leave them empty to keep the default name and logo.": "两项都可留空，留空则沿用默认名称与标志。",
+    "Site name": "站点名称",
+    "Shown in the header and browser tab": "显示在页头和浏览器标签上",
+    "Up to 64 characters.": "最多 64 个字符。",
+    "An http(s) URL or a path on this site, such as /logo.png.": "填 http(s) 地址，或本站路径，例如 /logo.png。",
+    "Logo must be an http(s) URL or an absolute path": "标志地址必须是 http(s) 链接或以 / 开头的路径",
+    "Environment checks": "环境自检",
+    "Checking…": "检查中…",
+    "Could not run the environment checks.": "环境自检未能完成。"
   }
 }

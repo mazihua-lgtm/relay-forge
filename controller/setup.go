@@ -1,7 +1,11 @@
 package controller
 
 import (
+	"errors"
+	"fmt"
+	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mazihua-lgtm/relay-forge/common"
@@ -22,7 +26,23 @@ type SetupRequest struct {
 	ConfirmPassword    string `json:"confirmPassword"`
 	SelfUseModeEnabled bool   `json:"SelfUseModeEnabled"`
 	DemoSiteEnabled    bool   `json:"DemoSiteEnabled"`
+	// SiteName and Logo are optional; when empty the built-in defaults stay.
+	SiteName string `json:"siteName"`
+	Logo     string `json:"logo"`
 }
+
+// SetupCheck is one line of the post-install self check.
+type SetupCheck struct {
+	Key    string `json:"key"`
+	Status string `json:"status"`
+	Detail string `json:"detail"`
+}
+
+const (
+	setupCheckOK      = "ok"
+	setupCheckWarning = "warning"
+	setupCheckError   = "error"
+)
 
 func GetSetup(c *gin.Context) {
 	setup := Setup{
@@ -103,6 +123,13 @@ func PostSetup(c *gin.Context) {
 		}
 	}
 
+	// Apply the optional white-label settings. Empty values keep the defaults,
+	// so an operator who skips the step sees no change.
+	if err := applySetupSiteOptions(req); err != nil {
+		common.ApiErrorT(c, "Failed to save the site settings: {{error}}", map[string]any{"error": err.Error()})
+		return
+	}
+
 	// Set operation modes
 	operation_setting.SelfUseModeEnabled = req.SelfUseModeEnabled
 	operation_setting.DemoSiteEnabled = req.DemoSiteEnabled
@@ -134,6 +161,111 @@ func PostSetup(c *gin.Context) {
 	}
 
 	common.ApiSuccessT(c, "System initialized successfully", nil)
+}
+
+// applySetupSiteOptions writes the optional white-label values collected by the
+// setup wizard. Each field is independent: an empty one leaves the current
+// option untouched, so a partially filled form cannot blank the site name.
+func applySetupSiteOptions(req SetupRequest) error {
+	siteName := strings.TrimSpace(req.SiteName)
+	if siteName != "" {
+		if utf8.RuneCountInString(siteName) > 64 {
+			return errors.New("site name must be 64 characters or fewer")
+		}
+		if err := model.UpdateOption("SystemName", siteName); err != nil {
+			return err
+		}
+	}
+
+	logo := strings.TrimSpace(req.Logo)
+	if logo == "" {
+		return nil
+	}
+	if utf8.RuneCountInString(logo) > 512 {
+		return errors.New("logo URL must be 512 characters or fewer")
+	}
+	if !strings.HasPrefix(logo, "http://") && !strings.HasPrefix(logo, "https://") && !strings.HasPrefix(logo, "/") {
+		return errors.New("logo must be an http(s) URL or an absolute path")
+	}
+	return model.UpdateOption("Logo", logo)
+}
+
+// GetSetupCheck reports what the freshly installed instance can and cannot do.
+// It is read-only and anonymous: it runs before any account exists, and it must
+// not reveal secrets — only whether a dependency is reachable.
+func GetSetupCheck(c *gin.Context) {
+	checks := make([]SetupCheck, 0, 4)
+
+	if model.DB != nil {
+		checks = append(checks, SetupCheck{
+			Key:    "database",
+			Status: setupCheckOK,
+			Detail: string(common.MainDatabaseType()),
+		})
+	} else {
+		checks = append(checks, SetupCheck{
+			Key:    "database",
+			Status: setupCheckError,
+			Detail: "database is not connected",
+		})
+	}
+
+	if !common.RedisEnabled {
+		checks = append(checks, SetupCheck{
+			Key:    "redis",
+			Status: setupCheckWarning,
+			Detail: "not configured (optional, recommended for multiple instances)",
+		})
+	} else {
+		probeKey := fmt.Sprintf("setup-check:%d", time.Now().UnixNano())
+		err := common.RedisSet(probeKey, "1", 30*time.Second)
+		if err != nil {
+			checks = append(checks, SetupCheck{
+				Key:    "redis",
+				Status: setupCheckError,
+				Detail: err.Error(),
+			})
+		} else {
+			_ = common.RedisDel(probeKey)
+			checks = append(checks, SetupCheck{
+				Key:    "redis",
+				Status: setupCheckOK,
+				Detail: "connected",
+			})
+		}
+	}
+
+	scheme := strings.TrimSpace(strings.Split(c.Request.Header.Get("X-Forwarded-Proto"), ",")[0])
+	if scheme == "" {
+		scheme = "http"
+		if c.Request.TLS != nil {
+			scheme = "https"
+		}
+	}
+	if scheme == "https" {
+		checks = append(checks, SetupCheck{
+			Key:    "https",
+			Status: setupCheckOK,
+			Detail: "https",
+		})
+	} else {
+		checks = append(checks, SetupCheck{
+			Key:    "https",
+			Status: setupCheckWarning,
+			Detail: "serving over http; put a TLS proxy in front before going public",
+		})
+	}
+
+	checks = append(checks, SetupCheck{
+		Key:    "version",
+		Status: setupCheckOK,
+		Detail: common.Version,
+	})
+
+	c.JSON(200, gin.H{
+		"success": true,
+		"data":    checks,
+	})
 }
 
 func boolToString(b bool) string {

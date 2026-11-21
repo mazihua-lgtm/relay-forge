@@ -46,6 +46,7 @@ import { buildSetupPayload, getSetupStatus, submitSetup } from './api'
 import { AdminStep } from './components/admin-step'
 import { CompleteStep } from './components/complete-step'
 import { DatabaseStep } from './components/database-step'
+import { SiteStep } from './components/site-step'
 import { StepNavigation } from './components/step-navigation'
 import { UsageModeStep } from './components/usage-mode-step'
 import type { SetupFormValues, SetupStatus } from './types'
@@ -54,6 +55,10 @@ const STEPS = [
   {
     titleKey: 'Database check',
     descriptionKey: 'Verify your database connection',
+  },
+  {
+    titleKey: 'Site identity',
+    descriptionKey: 'Name and logo your users will see',
   },
   {
     titleKey: 'Administrator account',
@@ -74,6 +79,8 @@ const DEFAULT_FORM_VALUES: SetupFormValues = {
   password: '',
   confirmPassword: '',
   usageMode: 'external',
+  siteName: '',
+  logo: '',
 }
 
 export function SetupWizard() {
@@ -195,6 +202,9 @@ export function SetupWizard() {
       return <DatabaseStep status={setupStatus} />
     }
     if (currentStep === 1) {
+      return <SiteStep form={form} />
+    }
+    if (currentStep === 2) {
       return (
         <AdminStep
           form={form}
@@ -202,11 +212,28 @@ export function SetupWizard() {
         />
       )
     }
-    if (currentStep === 2) {
+    if (currentStep === 3) {
       return <UsageModeStep form={form} />
     }
     return <CompleteStep status={setupStatus} values={watchedValues} />
   }, [currentStep, setupStatus, form, watchedValues])
+
+  const validateSiteStep = () => {
+    const logo = form.getValues('logo')?.trim()
+    if (!logo) return true
+
+    const isAbsoluteUrl = /^https?:\/\//i.test(logo)
+    if (!isAbsoluteUrl && !logo.startsWith('/')) {
+      form.setError('logo', {
+        type: 'manual',
+        message: t('Logo must be an http(s) URL or an absolute path'),
+      })
+      toast.error(t('Logo must be an http(s) URL or an absolute path'))
+      return false
+    }
+
+    return true
+  }
 
   const validateAdminStep = () => {
     if (setupStatus?.root_init) return true
@@ -259,8 +286,9 @@ export function SetupWizard() {
   }
 
   const handleNextStep = () => {
-    if (currentStep === 1 && !validateAdminStep()) return
-    if (currentStep === 2 && !validateUsageModeStep()) return
+    if (currentStep === 1 && !validateSiteStep()) return
+    if (currentStep === 2 && !validateAdminStep()) return
+    if (currentStep === 3 && !validateUsageModeStep()) return
 
     setCurrentStep((step) => Math.min(step + 1, STEPS.length - 1))
   }
@@ -270,9 +298,10 @@ export function SetupWizard() {
   }
 
   const handleSubmit = async () => {
+    const siteValid = validateSiteStep()
     const adminValid = validateAdminStep()
     const usageValid = validateUsageModeStep()
-    if (!adminValid || !usageValid) return
+    if (!siteValid || !adminValid || !usageValid) return
 
     const payload = buildSetupPayload(
       form.getValues(),
@@ -325,7 +354,7 @@ export function SetupWizard() {
           </CardHeader>
 
           <CardContent className='space-y-6'>
-            <ol className='grid gap-3 sm:grid-cols-4'>
+            <ol className='grid gap-3 sm:grid-cols-5'>
               {STEPS.map((step, index) => {
                 const isActive = currentStep === index
                 const isCompleted = currentStep > index

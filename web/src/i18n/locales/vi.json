@@ -7832,6 +7832,17 @@
     "Zhipu": "Zhipu",
     "Zhipu GLM": "Zhipu GLM",
     "Zhipu V4": "Zhipu V4",
-    "Zoom": "Zoom"
+    "Zoom": "Zoom",
+    "Site identity": "Site identity",
+    "Name and logo your users will see": "Name and logo your users will see",
+    "Both fields are optional. Leave them empty to keep the default name and logo.": "Both fields are optional. Leave them empty to keep the default name and logo.",
+    "Site name": "Site name",
+    "Shown in the header and browser tab": "Shown in the header and browser tab",
+    "Up to 64 characters.": "Up to 64 characters.",
+    "An http(s) URL or a path on this site, such as /logo.png.": "An http(s) URL or a path on this site, such as /logo.png.",
+    "Logo must be an http(s) URL or an absolute path": "Logo must be an http(s) URL or an absolute path",
+    "Environment checks": "Environment checks",
+    "Checking…": "Checking…",
+    "Could not run the environment checks.": "Could not run the environment checks."
   }
 }

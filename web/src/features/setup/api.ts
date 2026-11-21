@@ -18,7 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { api } from '@/lib/api'
 
-import type { SetupFormValues, SetupResponse } from './types'
+import type {
+  SetupCheckResponse,
+  SetupFormValues,
+  SetupResponse,
+} from './types'
 
 export async function getSetupStatus(): Promise<SetupResponse> {
   const res = await api.get('/api/setup', {
@@ -37,6 +41,15 @@ export async function submitSetup(
   return res.data
 }
 
+export async function getSetupChecks(): Promise<SetupCheckResponse> {
+  const res = await api.get('/api/setup/check', {
+    params: {
+      t: Date.now(),
+    },
+  })
+  return res.data
+}
+
 export function buildSetupPayload(
   values: SetupFormValues,
   rootInitialized: boolean
@@ -46,6 +59,8 @@ export function buildSetupPayload(
   const basePayload = {
     SelfUseModeEnabled: usageMode === 'self',
     DemoSiteEnabled: usageMode === 'demo',
+    siteName: values.siteName.trim(),
+    logo: values.logo.trim(),
   }
 
   if (rootInitialized) {

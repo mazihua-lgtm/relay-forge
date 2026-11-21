@@ -32,6 +32,23 @@ export interface SetupFormValues {
   password: string
   confirmPassword: string
   usageMode: SetupUsageMode
+  // Optional white-label values. Empty means "keep the built-in defaults".
+  siteName: string
+  logo: string
+}
+
+export type SetupCheckStatus = 'ok' | 'warning' | 'error'
+
+export interface SetupCheck {
+  key: string
+  status: SetupCheckStatus
+  detail: string
+}
+
+export interface SetupCheckResponse {
+  success: boolean
+  message?: string
+  data?: SetupCheck[]
 }
 
 export interface SetupResponse {

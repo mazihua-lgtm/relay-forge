@@ -7832,6 +7832,17 @@
     "Zhipu": "智譜",
     "Zhipu GLM": "智譜GLM",
     "Zhipu V4": "智譜 V4",
-    "Zoom": "縮放"
+    "Zoom": "縮放",
+    "Site identity": "站點資訊",
+    "Name and logo your users will see": "使用者看到的名稱與標誌",
+    "Both fields are optional. Leave them empty to keep the default name and logo.": "兩項都可留空，留空則沿用預設名稱與標誌。",
+    "Site name": "站點名稱",
+    "Shown in the header and browser tab": "顯示在頁首和瀏覽器分頁上",
+    "Up to 64 characters.": "最多 64 個字元。",
+    "An http(s) URL or a path on this site, such as /logo.png.": "填 http(s) 網址，或本站路徑，例如 /logo.png。",
+    "Logo must be an http(s) URL or an absolute path": "標誌網址必須是 http(s) 連結或以 / 開頭的路徑",
+    "Environment checks": "環境自我檢查",
+    "Checking…": "檢查中…",
+    "Could not run the environment checks.": "環境自我檢查未能完成。"
   }
 }
