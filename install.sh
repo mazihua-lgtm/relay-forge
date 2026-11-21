@@ -47,6 +47,15 @@ fi
 mkdir -p data logs
 
 say "拉起服务（首次会拉取镜像，可能需要几分钟）"
+if ! docker compose pull --quiet relay-forge 2>/dev/null; then
+  image="${RELAY_FORGE_IMAGE:-ghcr.io/mazihua-lgtm/relay-forge:latest}"
+  say ""
+  say "拉取镜像失败。如果这个镜像还没发布过，先在本机构建："
+  say "  docker build -t ${image} ."
+  say "然后用同样的命令再跑一次 ./install.sh"
+  say ""
+  die "镜像 ${image} 不可用"
+fi
 docker compose up -d
 
 port="${PORT:-3000}"
