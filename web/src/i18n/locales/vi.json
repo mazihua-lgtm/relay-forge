@@ -7883,6 +7883,16 @@
     "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "Số yêu cầu đồng thời tối đa mà nút này gửi tới một kênh. 0 là không giới hạn.",
     "requests": "yêu cầu",
     "Max requests per key per period": "Số yêu cầu tối đa mỗi key mỗi kỳ",
-    "0 uses the account limit above.": "0 sẽ dùng giới hạn tài khoản ở trên."
+    "0 uses the account limit above.": "0 sẽ dùng giới hạn tài khoản ở trên.",
+    "Also limit each model separately": "Giới hạn riêng từng model",
+    "Each account gets its own allowance per model, so one model cannot consume the whole account limit.": "Mỗi tài khoản có hạn mức riêng cho từng model, để một model không dùng hết hạn mức của tài khoản.",
+    "Max requests per model per period": "Số yêu cầu tối đa mỗi model mỗi kỳ",
+    "Blocked end users": "Người dùng cuối bị chặn",
+    "End users suspended after repeated policy refusals upstream. Unblocking lets them try again immediately.": "Người dùng cuối bị tạm dừng do bị thượng nguồn từ chối nhiều lần vì chính sách. Bỏ chặn để họ thử lại ngay.",
+    "Unblock": "Bỏ chặn",
+    "Unblocked": "Đã bỏ chặn",
+    "Failed to unblock": "Bỏ chặn thất bại",
+    "{{count}} refusals": "{{count}} lần từ chối",
+    "{{minutes}} min left": "còn {{minutes}} phút"
   }
 }

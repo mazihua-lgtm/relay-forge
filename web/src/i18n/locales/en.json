@@ -7883,6 +7883,16 @@
     "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "Maximum requests this node sends to one channel at the same time. 0 means unlimited.",
     "requests": "requests",
     "Max requests per key per period": "Max requests per key per period",
-    "0 uses the account limit above.": "0 uses the account limit above."
+    "0 uses the account limit above.": "0 uses the account limit above.",
+    "Also limit each model separately": "Also limit each model separately",
+    "Each account gets its own allowance per model, so one model cannot consume the whole account limit.": "Each account gets its own allowance per model, so one model cannot consume the whole account limit.",
+    "Max requests per model per period": "Max requests per model per period",
+    "Blocked end users": "Blocked end users",
+    "End users suspended after repeated policy refusals upstream. Unblocking lets them try again immediately.": "End users suspended after repeated policy refusals upstream. Unblocking lets them try again immediately.",
+    "Unblock": "Unblock",
+    "Unblocked": "Unblocked",
+    "Failed to unblock": "Failed to unblock",
+    "{{count}} refusals": "{{count}} refusals",
+    "{{minutes}} min left": "{{minutes}} min left"
   }
 }

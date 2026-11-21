@@ -7883,6 +7883,16 @@
     "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "Nombre maximal de requêtes simultanées envoyées par ce nœud vers un même canal. 0 signifie illimité.",
     "requests": "requêtes",
     "Max requests per key per period": "Requêtes max par clé et par période",
-    "0 uses the account limit above.": "0 utilise la limite du compte ci-dessus."
+    "0 uses the account limit above.": "0 utilise la limite du compte ci-dessus.",
+    "Also limit each model separately": "Limiter aussi chaque modèle séparément",
+    "Each account gets its own allowance per model, so one model cannot consume the whole account limit.": "Chaque compte dispose de sa propre allocation par modèle, afin qu'un modèle ne consomme pas toute la limite du compte.",
+    "Max requests per model per period": "Requêtes max par modèle et par période",
+    "Blocked end users": "Utilisateurs finaux bloqués",
+    "End users suspended after repeated policy refusals upstream. Unblocking lets them try again immediately.": "Utilisateurs finaux suspendus après des refus de politique répétés en amont. Le déblocage leur permet de réessayer immédiatement.",
+    "Unblock": "Débloquer",
+    "Unblocked": "Débloqué",
+    "Failed to unblock": "Échec du déblocage",
+    "{{count}} refusals": "{{count}} refus",
+    "{{minutes}} min left": "{{minutes}} min restantes"
   }
 }

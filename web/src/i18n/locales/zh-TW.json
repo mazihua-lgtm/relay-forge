@@ -7883,6 +7883,16 @@
     "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "本節點同時向單一渠道傳送的最大請求數。0 表示不限制。",
     "requests": "請求",
     "Max requests per key per period": "每把 Key 每週期最大請求數",
-    "0 uses the account limit above.": "0 表示沿用上面的帳號上限。"
+    "0 uses the account limit above.": "0 表示沿用上面的帳號上限。",
+    "Also limit each model separately": "同時按模型個別限流",
+    "Each account gets its own allowance per model, so one model cannot consume the whole account limit.": "每個帳號對每個模型各有一份額度，避免單一模型吃光整個帳號的額度。",
+    "Max requests per model per period": "每個模型每週期最大請求數",
+    "Blocked end users": "被封禁的終端使用者",
+    "End users suspended after repeated policy refusals upstream. Unblocking lets them try again immediately.": "因反覆觸發上游策略拒答而被暫停的終端使用者。解封後可以立即重試。",
+    "Unblock": "解封",
+    "Unblocked": "已解封",
+    "Failed to unblock": "解封失敗",
+    "{{count}} refusals": "{{count}} 次拒答",
+    "{{minutes}} min left": "還剩 {{minutes}} 分鐘"
   }
 }

@@ -62,3 +62,17 @@ export interface ClientFormValues {
   budget: number
   remark: string
 }
+
+export interface EndUserBlock {
+  token_id: number
+  model: string
+  end_user: string
+  refusals: number
+  blocked_until: number
+}
+
+export interface EndUserBlocksResponse {
+  success: boolean
+  message?: string
+  data?: EndUserBlock[]
+}

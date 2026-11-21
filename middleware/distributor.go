@@ -62,6 +62,25 @@ func Distribute() func(c *gin.Context) {
 				return
 			}
 		}
+		// 按模型限流：key 是「用户 × 模型」，避免一个租户吃光所有人对该模型的额度。
+		if setting.ModelRequestRateLimitEnabled && setting.ModelRequestRateLimitPerModel && modelRequest.Model != "" {
+			modelMaxCount := setting.ModelRequestRateLimitModelCount
+			if modelMaxCount <= 0 {
+				modelMaxCount = setting.ModelRequestRateLimitCount
+			}
+			subject := fmt.Sprintf("model:%d:%s", c.GetInt("id"), modelRequest.Model)
+			allowed, checkErr := checkTokenTotalLimit(subject, rateLimitDurationSeconds(setting.ModelRequestRateLimitDurationMinutes), modelMaxCount)
+			if checkErr != nil {
+				common.SysLog(common.LogText("failed to check the per-model request limit: %s", checkErr.Error()))
+				abortWithOpenAiMessage(c, http.StatusInternalServerError, "rate_limit_check_failed")
+				return
+			}
+			if !allowed {
+				abortWithOpenAiMessage(c, http.StatusTooManyRequests, i18n.T(c, i18n.MsgRateLimitTotalReached, map[string]any{"Minutes": setting.ModelRequestRateLimitDurationMinutes, "Max": modelMaxCount}))
+				return
+			}
+		}
+
 		_, pinned, _ := constraints.ResolvedPin()
 		if !pinned {
 			// Select a channel for the user

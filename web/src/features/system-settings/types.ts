@@ -404,6 +404,8 @@ export type SecuritySettings = {
   ModelRequestRateLimitEnabled: boolean
   ModelRequestRateLimitPerToken: boolean
   ModelRequestRateLimitTokenCount: number
+  ModelRequestRateLimitPerModel: boolean
+  ModelRequestRateLimitModelCount: number
   ChannelConcurrencyLimit: number
   ModelRequestRateLimitCount: number
   ModelRequestRateLimitSuccessCount: number

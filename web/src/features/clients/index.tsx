@@ -34,12 +34,20 @@ import { formatQuotaWithCurrency } from '@/lib/currency'
 import { handleServerError } from '@/lib/handle-server-error'
 import { requireServerSuccess } from '@/lib/server-error-message'
 
-import { createClient, deleteClient, getClients, updateClient } from './api'
+import {
+  clearMyEndUserBlock,
+  createClient,
+  deleteClient,
+  getClients,
+  getMyEndUserBlocks,
+  updateClient,
+} from './api'
 import { ClientFormDialog } from './components/client-form-dialog'
 import {
   CLIENT_STATUS_DISABLED,
   CLIENT_STATUS_ENABLED,
   type ClientUsage,
+  type EndUserBlock,
 } from './types'
 
 const PAGE_SIZE = 12
@@ -67,6 +75,29 @@ export function Clients() {
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['clients'] })
+
+  const blocksQuery = useQuery({
+    queryKey: ['end-user-blocks'],
+    queryFn: async () => {
+      const response = requireServerSuccess(await getMyEndUserBlocks())
+      return response.data ?? []
+    },
+  })
+
+  const unblockMutation = useMutation({
+    mutationFn: (block: EndUserBlock) =>
+      clearMyEndUserBlock({
+        tokenId: block.token_id,
+        model: block.model,
+        endUser: block.end_user,
+      }),
+    onSuccess: async (response) => {
+      requireServerSuccess(response)
+      toast.success(t('Unblocked'))
+      await queryClient.invalidateQueries({ queryKey: ['end-user-blocks'] })
+    },
+    onError: (error) => handleServerError(error, t('Failed to unblock')),
+  })
 
   const createMutation = useMutation({
     mutationFn: createClient,
@@ -209,6 +240,53 @@ export function Clients() {
             <span className='sr-only'>{t('Next page')}</span>
           </Button>
         </div>
+      )}
+
+      {(blocksQuery.data?.length ?? 0) > 0 && (
+        <Card>
+          <CardHeader className='space-y-1'>
+            <CardTitle className='text-base'>
+              {t('Blocked end users')}
+            </CardTitle>
+            <p className='text-muted-foreground text-sm'>
+              {t(
+                'End users suspended after repeated policy refusals upstream. Unblocking lets them try again immediately.'
+              )}
+            </p>
+          </CardHeader>
+          <CardContent className='space-y-2'>
+            {blocksQuery.data?.map((block) => (
+              <div
+                key={`${block.token_id}:${block.model}:${block.end_user}`}
+                className='flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3'
+              >
+                <div className='space-y-0.5'>
+                  <p className='text-sm font-medium'>{block.end_user}</p>
+                  <p className='text-muted-foreground text-xs'>
+                    {block.model} ·{' '}
+                    {t('{{count}} refusals', { count: block.refusals })} ·{' '}
+                    {t('{{minutes}} min left', {
+                      minutes: Math.max(
+                        0,
+                        Math.ceil(
+                          (block.blocked_until * 1000 - Date.now()) / 60000
+                        )
+                      ),
+                    })}
+                  </p>
+                </div>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  disabled={unblockMutation.isPending}
+                  onClick={() => unblockMutation.mutate(block)}
+                >
+                  {t('Unblock')}
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       )}
 
       <ClientFormDialog

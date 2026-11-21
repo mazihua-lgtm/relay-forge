@@ -71,6 +71,8 @@ const createRateLimitSchema = (t: (key: string) => string) =>
     ModelRequestRateLimitEnabled: z.boolean(),
     ModelRequestRateLimitPerToken: z.boolean(),
     ModelRequestRateLimitTokenCount: z.number().min(0).max(100000000),
+    ModelRequestRateLimitPerModel: z.boolean(),
+    ModelRequestRateLimitModelCount: z.number().min(0).max(100000000),
     ChannelConcurrencyLimit: z.number().min(0).max(1000000),
     ModelRequestRateLimitDurationMinutes: z.number().min(0),
     ModelRequestRateLimitCount: z.number().min(0).max(100000000),
@@ -180,6 +182,54 @@ export function RateLimitSection({ defaultValues }: RateLimitSectionProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t('Max requests per key per period')}</FormLabel>
+                <FormControl>
+                  <Input
+                    type='number'
+                    min={0}
+                    step={1}
+                    {...field}
+                    onChange={(e) =>
+                      field.onChange(Number.parseInt(e.target.value) || 0)
+                    }
+                  />
+                </FormControl>
+                <FormDescription>
+                  {t('0 uses the account limit above.')}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='ModelRequestRateLimitPerModel'
+            render={({ field }) => (
+              <SettingsSwitchItem>
+                <SettingsSwitchContent>
+                  <FormLabel>{t('Also limit each model separately')}</FormLabel>
+                  <FormDescription>
+                    {t(
+                      'Each account gets its own allowance per model, so one model cannot consume the whole account limit.'
+                    )}
+                  </FormDescription>
+                </SettingsSwitchContent>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </SettingsSwitchItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='ModelRequestRateLimitModelCount'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('Max requests per model per period')}</FormLabel>
                 <FormControl>
                   <Input
                     type='number'

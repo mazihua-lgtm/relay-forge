@@ -30,6 +30,15 @@ var ModelRequestRateLimitPerToken = false
 // deployment sets it lower than ModelRequestRateLimitCount.
 var ModelRequestRateLimitTokenCount = 0
 
+// ModelRequestRateLimitPerModel limits each user's requests to one model. The
+// key is user × model: a global per-model cap would let one tenant consume the
+// allowance of everybody else.
+var ModelRequestRateLimitPerModel = false
+
+// ModelRequestRateLimitModelCount is the per-model limit. 0 falls back to the
+// account-wide count.
+var ModelRequestRateLimitModelCount = 0
+
 // ChannelConcurrencyLimit caps how many requests this node may have in flight to
 // one channel at the same time. 0 means unlimited. It protects a channel from
 // being flooded by a single tenant, which is what upstream providers usually

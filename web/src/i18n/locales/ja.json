@@ -7883,6 +7883,16 @@
     "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "このノードが 1 つのチャネルへ同時に送る最大リクエスト数。0 は無制限です。",
     "requests": "リクエスト",
     "Max requests per key per period": "キーごとの期間あたり最大リクエスト数",
-    "0 uses the account limit above.": "0 の場合は上記のアカウント上限を使用します。"
+    "0 uses the account limit above.": "0 の場合は上記のアカウント上限を使用します。",
+    "Also limit each model separately": "モデルごとにも制限する",
+    "Each account gets its own allowance per model, so one model cannot consume the whole account limit.": "アカウントごとにモデル別の枠を持たせ、1 つのモデルがアカウント全体の上限を使い切らないようにします。",
+    "Max requests per model per period": "モデルごとの期間あたり最大リクエスト数",
+    "Blocked end users": "ブロック中のエンドユーザー",
+    "End users suspended after repeated policy refusals upstream. Unblocking lets them try again immediately.": "上流のポリシー拒否が繰り返されたため停止中のエンドユーザーです。解除するとすぐに再試行できます。",
+    "Unblock": "解除",
+    "Unblocked": "解除しました",
+    "Failed to unblock": "解除に失敗しました",
+    "{{count}} refusals": "{{count}} 回の拒否",
+    "{{minutes}} min left": "残り {{minutes}} 分"
   }
 }

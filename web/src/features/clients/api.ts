@@ -18,7 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { api } from '@/lib/api'
 
-import type { ClientResponse, ClientsResponse } from './types'
+import type {
+  ClientResponse,
+  ClientsResponse,
+  EndUserBlocksResponse,
+} from './types'
 
 export async function getClients(params?: {
   page?: number
@@ -59,5 +63,25 @@ export async function updateClient(
 
 export async function deleteClient(id: number): Promise<ClientResponse> {
   const res = await api.delete(`/api/client/${id}`)
+  return res.data
+}
+
+export async function getMyEndUserBlocks(): Promise<EndUserBlocksResponse> {
+  const res = await api.get('/api/end_user/blocks/self')
+  return res.data
+}
+
+export async function clearMyEndUserBlock(params: {
+  tokenId: number
+  model: string
+  endUser: string
+}): Promise<{ success: boolean; message?: string }> {
+  const res = await api.delete('/api/end_user/blocks/self', {
+    params: {
+      token_id: params.tokenId,
+      model: params.model,
+      end_user: params.endUser,
+    },
+  })
   return res.data
 }

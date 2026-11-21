@@ -151,6 +151,8 @@ func InitOptionMap() {
 	common.OptionMap["PreConsumedQuota"] = strconv.Itoa(common.PreConsumedQuota)
 	common.OptionMap["ModelRequestRateLimitCount"] = strconv.Itoa(setting.ModelRequestRateLimitCount)
 	common.OptionMap["ModelRequestRateLimitTokenCount"] = strconv.Itoa(setting.ModelRequestRateLimitTokenCount)
+	common.OptionMap["ModelRequestRateLimitModelCount"] = strconv.Itoa(setting.ModelRequestRateLimitModelCount)
+	common.OptionMap["ModelRequestRateLimitPerModel"] = strconv.FormatBool(setting.ModelRequestRateLimitPerModel)
 	common.OptionMap["ModelRequestRateLimitDurationMinutes"] = strconv.Itoa(setting.ModelRequestRateLimitDurationMinutes)
 	common.OptionMap["ModelRequestRateLimitSuccessCount"] = strconv.Itoa(setting.ModelRequestRateLimitSuccessCount)
 	common.OptionMap["ModelRequestRateLimitGroup"] = setting.ModelRequestRateLimitGroup2JSONString()
@@ -661,6 +663,10 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.ModelRequestRateLimitTokenCount, _ = strconv.Atoi(value)
 	case "ModelRequestRateLimitPerToken":
 		setting.ModelRequestRateLimitPerToken = value == "true"
+	case "ModelRequestRateLimitModelCount":
+		setting.ModelRequestRateLimitModelCount, _ = strconv.Atoi(value)
+	case "ModelRequestRateLimitPerModel":
+		setting.ModelRequestRateLimitPerModel = value == "true"
 	case "ChannelConcurrencyLimit":
 		setting.ChannelConcurrencyLimit, _ = strconv.Atoi(value)
 		if setting.ChannelConcurrencyLimit < 0 {

@@ -7883,6 +7883,16 @@
     "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "Максимум одновременных запросов, которые этот узел отправляет в один канал. 0 — без ограничений.",
     "requests": "запросов",
     "Max requests per key per period": "Максимум запросов на ключ за период",
-    "0 uses the account limit above.": "0 — использовать лимит аккаунта выше."
+    "0 uses the account limit above.": "0 — использовать лимит аккаунта выше.",
+    "Also limit each model separately": "Ограничивать каждую модель отдельно",
+    "Each account gets its own allowance per model, so one model cannot consume the whole account limit.": "У каждого аккаунта своя квота на модель, чтобы одна модель не израсходовала весь лимит аккаунта.",
+    "Max requests per model per period": "Максимум запросов на модель за период",
+    "Blocked end users": "Заблокированные конечные пользователи",
+    "End users suspended after repeated policy refusals upstream. Unblocking lets them try again immediately.": "Конечные пользователи, приостановленные из-за повторных отказов по политике вышестоящего провайдера. Разблокировка позволяет сразу повторить попытку.",
+    "Unblock": "Разблокировать",
+    "Unblocked": "Разблокировано",
+    "Failed to unblock": "Не удалось разблокировать",
+    "{{count}} refusals": "отказов: {{count}}",
+    "{{minutes}} min left": "осталось {{minutes}} мин"
   }
 }
