@@ -181,6 +181,7 @@ func InitOptionMap() {
 	common.OptionMap["SelfUseModeEnabled"] = strconv.FormatBool(operation_setting.SelfUseModeEnabled)
 	common.OptionMap["ModelRequestRateLimitEnabled"] = strconv.FormatBool(setting.ModelRequestRateLimitEnabled)
 	common.OptionMap["ModelRequestRateLimitPerToken"] = strconv.FormatBool(setting.ModelRequestRateLimitPerToken)
+	common.OptionMap["ChannelConcurrencyLimit"] = strconv.Itoa(setting.ChannelConcurrencyLimit)
 	common.OptionMap["AutomaticDisableKeywords"] = operation_setting.AutomaticDisableKeywordsToString()
 	common.OptionMap["AutomaticDisableStatusCodes"] = operation_setting.AutomaticDisableStatusCodesToString()
 	common.OptionMap["AutomaticRetryStatusCodes"] = operation_setting.AutomaticRetryStatusCodesToString()
@@ -488,6 +489,11 @@ func updateOptionMap(key string, value string) (err error) {
 			setting.ModelRequestRateLimitEnabled = boolValue
 		case "ModelRequestRateLimitPerToken":
 			setting.ModelRequestRateLimitPerToken = boolValue
+		case "ChannelConcurrencyLimit":
+			setting.ChannelConcurrencyLimit, _ = strconv.Atoi(value)
+			if setting.ChannelConcurrencyLimit < 0 {
+				setting.ChannelConcurrencyLimit = 0
+			}
 		case "SMTPSSLEnabled":
 			common.SMTPSSLEnabled = boolValue
 		case "SMTPStartTLSEnabled":

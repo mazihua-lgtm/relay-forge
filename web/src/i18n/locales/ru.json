@@ -7878,6 +7878,9 @@
     "Page {{page}} of {{total}}": "Страница {{page}} из {{total}}",
     "Over budget: this client has used more than it paid for.": "Превышение бюджета: клиент израсходовал больше, чем заплатил.",
     "Also limit each API key separately": "Ограничивать каждый ключ API отдельно",
-    "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "То же окно и то же количество применяются к каждому ключу сверх лимита аккаунта, чтобы один ключ не израсходовал весь лимит."
+    "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "То же окно и то же количество применяются к каждому ключу сверх лимита аккаунта, чтобы один ключ не израсходовал весь лимит.",
+    "Channel concurrency limit": "Предел параллельных запросов к каналу",
+    "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "Максимум одновременных запросов, которые этот узел отправляет в один канал. 0 — без ограничений.",
+    "requests": "запросов"
   }
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/mazihua-lgtm/relay-forge/relaykit/dto"
 	"github.com/mazihua-lgtm/relay-forge/relaykit/types"
 	"github.com/mazihua-lgtm/relay-forge/service"
+	"github.com/mazihua-lgtm/relay-forge/setting"
 	"github.com/mazihua-lgtm/relay-forge/setting/ratio_setting"
 
 	"github.com/MoeForge/moego/ojson"
@@ -143,6 +144,17 @@ func Distribute() func(c *gin.Context) {
 		}
 		common.SetContextKey(c, constant.ContextKeyRequestStartTime, time.Now())
 		SetupContextForSelectedChannel(c, channel, modelRequest.Model)
+
+		// 按渠道限制并发：同一渠道同时进行的请求数超过上限时直接拒绝，
+		// 而不是把上游打到限流甚至封号。defer 保证异常路径也会归还名额。
+		if channel != nil && setting.ChannelConcurrencyLimit > 0 {
+			if !service.TryAcquireChannelSlot(channel.Id, setting.ChannelConcurrencyLimit) {
+				abortWithOpenAiMessage(c, http.StatusTooManyRequests, i18n.T(c, i18n.MsgDistributorChannelBusy, map[string]any{"Channel": channel.Name}))
+				return
+			}
+			defer service.ReleaseChannelSlot(channel.Id)
+		}
+
 		c.Next()
 		if channel != nil && c.Writer != nil && c.Writer.Status() < http.StatusBadRequest {
 			service.RecordChannelAffinity(c, channel.Id)

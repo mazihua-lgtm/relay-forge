@@ -70,6 +70,7 @@ const createRateLimitSchema = (t: (key: string) => string) =>
   z.object({
     ModelRequestRateLimitEnabled: z.boolean(),
     ModelRequestRateLimitPerToken: z.boolean(),
+    ChannelConcurrencyLimit: z.number().min(0).max(1000000),
     ModelRequestRateLimitDurationMinutes: z.number().min(0),
     ModelRequestRateLimitCount: z.number().min(0).max(100000000),
     ModelRequestRateLimitSuccessCount: z.number().min(1).max(100000000),
@@ -169,6 +170,38 @@ export function RateLimitSection({ defaultValues }: RateLimitSectionProps) {
                   />
                 </FormControl>
               </SettingsSwitchItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='ChannelConcurrencyLimit'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('Channel concurrency limit')}</FormLabel>
+                <FormControl>
+                  <div className='flex items-center gap-2'>
+                    <Input
+                      type='number'
+                      min={0}
+                      step={1}
+                      {...field}
+                      onChange={(e) =>
+                        field.onChange(Number.parseInt(e.target.value) || 0)
+                      }
+                    />
+                    <span className='text-muted-foreground text-sm'>
+                      {t('requests')}
+                    </span>
+                  </div>
+                </FormControl>
+                <FormDescription>
+                  {t(
+                    'Maximum requests this node sends to one channel at the same time. 0 means unlimited.'
+                  )}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
             )}
           />
 

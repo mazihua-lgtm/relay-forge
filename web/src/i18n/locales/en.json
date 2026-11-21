@@ -7878,6 +7878,9 @@
     "Page {{page}} of {{total}}": "Page {{page}} of {{total}}",
     "Over budget: this client has used more than it paid for.": "Over budget: this client has used more than it paid for.",
     "Also limit each API key separately": "Also limit each API key separately",
-    "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance."
+    "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.",
+    "Channel concurrency limit": "Channel concurrency limit",
+    "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "Maximum requests this node sends to one channel at the same time. 0 means unlimited.",
+    "requests": "requests"
   }
 }

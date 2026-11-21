@@ -24,6 +24,12 @@ var ModelRequestRateLimitEnabled = false
 // key as well as to the user. A reseller account holds many keys, so a user-only
 // limit lets one key consume the whole allowance.
 var ModelRequestRateLimitPerToken = false
+
+// ChannelConcurrencyLimit caps how many requests this node may have in flight to
+// one channel at the same time. 0 means unlimited. It protects a channel from
+// being flooded by a single tenant, which is what upstream providers usually
+// punish with a ban.
+var ChannelConcurrencyLimit = 0
 var ModelRequestRateLimitDurationMinutes = 1
 var ModelRequestRateLimitCount = 0
 var ModelRequestRateLimitSuccessCount = 1000

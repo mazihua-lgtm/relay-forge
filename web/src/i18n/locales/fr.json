@@ -7878,6 +7878,9 @@
     "Page {{page}} of {{total}}": "Page {{page}} sur {{total}}",
     "Over budget: this client has used more than it paid for.": "Dépassement : ce client a consommé plus que ce qu'il a payé.",
     "Also limit each API key separately": "Limiter aussi chaque clé API séparément",
-    "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "La même fenêtre et le même quota s'appliquent à chaque clé en plus de la limite du compte, afin qu'une seule clé ne consomme pas toute l'allocation."
+    "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "La même fenêtre et le même quota s'appliquent à chaque clé en plus de la limite du compte, afin qu'une seule clé ne consomme pas toute l'allocation.",
+    "Channel concurrency limit": "Limite de concurrence par canal",
+    "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "Nombre maximal de requêtes simultanées envoyées par ce nœud vers un même canal. 0 signifie illimité.",
+    "requests": "requêtes"
   }
 }

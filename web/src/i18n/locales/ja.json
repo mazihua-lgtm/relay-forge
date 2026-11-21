@@ -7878,6 +7878,9 @@
     "Page {{page}} of {{total}}": "{{total}} ページ中 {{page}} ページ目",
     "Over budget: this client has used more than it paid for.": "予算超過：この顧客は支払った金額以上に使用しています。",
     "Also limit each API key separately": "API キーごとにも制限する",
-    "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "アカウントの制限に加えて、同じ時間枠と回数を各キーに適用します。1 つのキーが全枠を使い切るのを防ぎます。"
+    "The same window and count apply to every key on top of the account limit, so one key cannot use up the whole allowance.": "アカウントの制限に加えて、同じ時間枠と回数を各キーに適用します。1 つのキーが全枠を使い切るのを防ぎます。",
+    "Channel concurrency limit": "チャネル同時接続数の上限",
+    "Maximum requests this node sends to one channel at the same time. 0 means unlimited.": "このノードが 1 つのチャネルへ同時に送る最大リクエスト数。0 は無制限です。",
+    "requests": "リクエスト"
   }
 }
