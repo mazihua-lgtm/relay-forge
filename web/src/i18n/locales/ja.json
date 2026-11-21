@@ -7893,6 +7893,8 @@
     "Unblocked": "解除しました",
     "Failed to unblock": "解除に失敗しました",
     "{{count}} refusals": "{{count}} 回の拒否",
-    "{{minutes}} min left": "残り {{minutes}} 分"
+    "{{minutes}} min left": "残り {{minutes}} 分",
+    "Commission paid": "支払ったコミッション",
+    "Revenue minus upstream cost and commission": "収益から上流コストとコミッションを差し引いた額"
   }
 }

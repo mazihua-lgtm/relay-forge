@@ -7893,6 +7893,8 @@
     "Unblocked": "Đã bỏ chặn",
     "Failed to unblock": "Bỏ chặn thất bại",
     "{{count}} refusals": "{{count}} lần từ chối",
-    "{{minutes}} min left": "còn {{minutes}} phút"
+    "{{minutes}} min left": "còn {{minutes}} phút",
+    "Commission paid": "Chi hoa hồng",
+    "Revenue minus upstream cost and commission": "Doanh thu trừ chi phí thượng nguồn và hoa hồng"
   }
 }

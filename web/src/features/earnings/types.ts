@@ -41,6 +41,8 @@ export interface EarningsDateRange {
 }
 
 export interface EarningsOverview extends EarningsFigures {
+  /** Distributor commission paid in the window; already deducted from gross_profit. */
+  total_commission: number
   /** The charge-to-cost multiplier that prices the estimated part of the cost. */
   cost_ratio: number
   date_range: EarningsDateRange

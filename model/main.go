@@ -344,6 +344,7 @@ func migrateDB() error {
 		&Token{},
 		&Client{},
 		&EndUserBlockRecord{},
+		&CommissionRecord{},
 		&User{},
 		&UserSession{},
 		&AuthFlow{},

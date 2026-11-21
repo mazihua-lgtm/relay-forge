@@ -73,11 +73,22 @@ export function EarningsSummaryCards(props: EarningsSummaryCardsProps) {
         action={
           data ? <CostSourceBadge source={data.cost_source} /> : undefined
         }
+        detailsOnMobile
+        details={
+          data
+            ? [
+                {
+                  label: t('Commission paid'),
+                  value: formatQuota(data.total_commission),
+                },
+              ]
+            : undefined
+        }
       />
       <StatCard
         title={t('Gross profit')}
         value={data ? formatQuota(data.gross_profit) : '-'}
-        description={t('Revenue minus upstream cost')}
+        description={t('Revenue minus upstream cost and commission')}
         icon={TrendingUp}
         tone='accent-3'
         loading={loading}

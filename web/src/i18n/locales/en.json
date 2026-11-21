@@ -7893,6 +7893,8 @@
     "Unblocked": "Unblocked",
     "Failed to unblock": "Failed to unblock",
     "{{count}} refusals": "{{count}} refusals",
-    "{{minutes}} min left": "{{minutes}} min left"
+    "{{minutes}} min left": "{{minutes}} min left",
+    "Commission paid": "Commission paid",
+    "Revenue minus upstream cost and commission": "Revenue minus upstream cost and commission"
   }
 }

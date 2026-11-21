@@ -7893,6 +7893,8 @@
     "Unblocked": "Débloqué",
     "Failed to unblock": "Échec du déblocage",
     "{{count}} refusals": "{{count}} refus",
-    "{{minutes}} min left": "{{minutes}} min restantes"
+    "{{minutes}} min left": "{{minutes}} min restantes",
+    "Commission paid": "Commission versée",
+    "Revenue minus upstream cost and commission": "Revenus moins coût amont et commission"
   }
 }

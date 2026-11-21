@@ -76,6 +76,9 @@ func SettleInviterCommission(inviteeId int, quota int) (int, error) {
 	if err := IncreaseUserQuota(inviterId, int(commission), false); err != nil {
 		return 0, err
 	}
+	if err := RecordCommission(inviterId, inviteeId, commission); err != nil {
+		common.SysLog(common.LogText("failed to record the commission ledger entry: %s", err.Error()))
+	}
 	RecordLog(inviterId, LogTypeSystem, common.NewMessage("下级消费抽成 {{quota}}（下级 {{invitee}} 本次消费 {{consumed}}）", map[string]any{
 		"quota":    logger.FormatQuota(int(commission)),
 		"invitee":  inviteeId,
@@ -130,6 +133,9 @@ func ClawbackInviterCommission(inviteeId int, quota int) (int, error) {
 	}
 	if err := DecreaseUserQuota(inviterId, int(commission), false); err != nil {
 		return 0, err
+	}
+	if err := RecordCommission(inviterId, inviteeId, -commission); err != nil {
+		common.SysLog(common.LogText("failed to record the commission clawback: %s", err.Error()))
 	}
 	RecordLog(inviterId, LogTypeSystem, common.NewMessage("任务退款冲回抽成 {{quota}}（下级 {{invitee}} 退款 {{consumed}}）", map[string]any{
 		"quota":    logger.FormatQuota(int(commission)),

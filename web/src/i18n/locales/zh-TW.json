@@ -7893,6 +7893,8 @@
     "Unblocked": "已解封",
     "Failed to unblock": "解封失敗",
     "{{count}} refusals": "{{count}} 次拒答",
-    "{{minutes}} min left": "還剩 {{minutes}} 分鐘"
+    "{{minutes}} min left": "還剩 {{minutes}} 分鐘",
+    "Commission paid": "抽成支出",
+    "Revenue minus upstream cost and commission": "收入減去上游成本與抽成"
   }
 }

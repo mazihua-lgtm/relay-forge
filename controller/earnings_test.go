@@ -34,7 +34,7 @@ func setupEarningsControllerTest(t *testing.T) *gorm.DB {
 	sqlDB, err := db.DB()
 	require.NoError(t, err)
 	sqlDB.SetMaxOpenConns(1)
-	require.NoError(t, db.AutoMigrate(&model.Log{}))
+	require.NoError(t, db.AutoMigrate(&model.Log{}, &model.CommissionRecord{}))
 	require.NoError(t, db.Exec("CREATE TABLE channels (id integer primary key, name varchar(255))").Error)
 	require.NoError(t, db.Exec("INSERT INTO channels (id, name) VALUES (1, 'openai-main'), (2, 'claude-main')").Error)
 
@@ -366,4 +366,20 @@ func TestEarningsRefundsDoNotChangeTheCost(t *testing.T) {
 	assert.EqualValues(t, 1450, overview["total_cost"], "the same cost as without the refund")
 	assert.EqualValues(t, 650, overview["gross_profit"])
 	assert.Equal(t, "mixed", overview["cost_source"])
+}
+
+// Commission is money the platform paid out, so the overview deducts it from the
+// profit and reports it separately.
+func TestEarningsOverviewDeductsCommission(t *testing.T) {
+	db := setupEarningsControllerTest(t)
+	seedEarningsControllerLogs(t, db)
+
+	at := earningsTestDay.Add(9 * time.Hour).Unix()
+	require.NoError(t, db.Create(&model.CommissionRecord{InviterId: 1, InviteeId: 2, Quota: 100, CreatedAt: at}).Error)
+	require.NoError(t, db.Create(&model.CommissionRecord{InviterId: 1, InviteeId: 3, Quota: -20, CreatedAt: at}).Error)
+
+	data := requestEarnings(t, GetEarningsOverview, "?start_date=2026-11-10&end_date=2026-11-10")
+
+	assert.EqualValues(t, 80, data["total_commission"], "100 paid - 20 clawed back")
+	assert.EqualValues(t, 103, data["gross_profit"], "183 without commission - 80")
 }

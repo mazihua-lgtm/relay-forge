@@ -275,3 +275,23 @@ func TestClientStatusCascadesToItsKeys(t *testing.T) {
 	assert.Equal(t, common.TokenStatusDisabled, manualGot.Status, "a hand-disabled key stays off")
 	assert.False(t, manualGot.DisabledByClient)
 }
+
+// The commission ledger records both payouts and clawbacks, so a window sum is
+// the net amount the platform actually paid out.
+func TestCommissionLedgerSumsNetPayouts(t *testing.T) {
+	db := openClientTestDB(t, "sqlite")
+	require.NoError(t, db.AutoMigrate(&CommissionRecord{}))
+
+	now := common.GetTimestamp()
+	require.NoError(t, RecordCommission(1, 2, 100))
+	require.NoError(t, RecordCommission(1, 3, 50))
+	require.NoError(t, RecordCommission(1, 2, -100))
+
+	net, err := SumCommissionInRange(now-60, now+60)
+	require.NoError(t, err)
+	assert.EqualValues(t, 50, net, "a clawback cancels its payout")
+
+	outside, err := SumCommissionInRange(now+3600, now+7200)
+	require.NoError(t, err)
+	assert.EqualValues(t, 0, outside)
+}

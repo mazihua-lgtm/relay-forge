@@ -7893,6 +7893,8 @@
     "Unblocked": "Разблокировано",
     "Failed to unblock": "Не удалось разблокировать",
     "{{count}} refusals": "отказов: {{count}}",
-    "{{minutes}} min left": "осталось {{minutes}} мин"
+    "{{minutes}} min left": "осталось {{minutes}} мин",
+    "Commission paid": "Выплаченная комиссия",
+    "Revenue minus upstream cost and commission": "Выручка минус стоимость вышестоящих каналов и комиссия"
   }
 }

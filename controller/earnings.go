@@ -117,8 +117,12 @@ type earningsDateRange struct {
 // estimated part of the cost uses; recorded costs do not depend on it.
 type earningsOverviewResponse struct {
 	earningsFigures
-	CostRatio float64           `json:"cost_ratio"`
-	DateRange earningsDateRange `json:"date_range"`
+	// TotalCommission is the distributor commission paid in the window. It is
+	// not attributable to a channel or a model, so only the overview reports it,
+	// and gross_profit here is net of it.
+	TotalCommission int64             `json:"total_commission"`
+	CostRatio       float64           `json:"cost_ratio"`
+	DateRange       earningsDateRange `json:"date_range"`
 }
 
 type earningsChannelItem struct {
@@ -211,8 +215,22 @@ func GetEarningsOverview(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	commission, err := model.SumCommissionInRange(window.startTimestamp, window.endTimestamp)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+
+	figures := buildEarningsFigures(overview.Revenue, overview.Refund, overview.CostQuota, overview.UnrecordedRevenue, overview.RequestCount)
+	// 抽成是平台实际掏出去的钱，和上游成本一样要从毛利里扣。
+	figures.GrossProfit -= commission
+	if figures.TotalRevenue > 0 {
+		figures.GrossMargin = math.Round(float64(figures.GrossProfit)/float64(figures.TotalRevenue)*10000) / 10000
+	}
+
 	common.ApiSuccess(c, earningsOverviewResponse{
-		earningsFigures: buildEarningsFigures(overview.Revenue, overview.Refund, overview.CostQuota, overview.UnrecordedRevenue, overview.RequestCount),
+		earningsFigures: figures,
+		TotalCommission: commission,
 		CostRatio:       model.EarningsCostRatio,
 		DateRange:       window.dateRange(),
 	})
