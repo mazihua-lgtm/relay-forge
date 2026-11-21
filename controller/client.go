@@ -155,6 +155,9 @@ func normalizeClientName(raw string) (string, error) {
 // quota counts each live key's remaining plus used amount, and the snapshot of
 // deleted keys, so editing a key cannot silently overbook the budget.
 func validateClientKeyQuota(client *model.Client, excludeTokenId int, unlimited bool, remainQuota int) error {
+	if client.Status == model.ClientStatusDisabled {
+		return errors.New("cannot issue or update a key under a disabled client")
+	}
 	if unlimited {
 		return errors.New("a key filed under a client cannot have unlimited quota")
 	}

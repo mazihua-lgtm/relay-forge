@@ -99,3 +99,14 @@ func TestValidateClientKeyQuotaRejectsExhaustedBudget(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "already committed")
 }
+
+func TestValidateClientKeyQuotaRejectsDisabledClient(t *testing.T) {
+	openClientBudgetDB(t)
+
+	client := model.Client{UserId: 1, Name: "Acme", BudgetQuota: 1000, Status: model.ClientStatusDisabled}
+	require.NoError(t, model.DB.Create(&client).Error)
+
+	err := validateClientKeyQuota(&client, 0, false, 100)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "disabled client")
+}
