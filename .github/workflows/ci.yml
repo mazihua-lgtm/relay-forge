@@ -3,6 +3,10 @@ name: CI
 on:
   pull_request:
     types: [opened, synchronize, closed]
+  # Direct pushes to main skip the pull_request event entirely, so without this
+  # the tests would never run on the commits that actually ship.
+  push:
+    branches: [main]
 
 permissions:
   contents: read
