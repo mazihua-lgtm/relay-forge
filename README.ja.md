@@ -1,3 +1,5 @@
+> これは上流 new-api の元の README（アーカイブ）です。本プロジェクトの説明は [README.md](./README.md) を参照してください。
+
 <div align="center">
 
 ![new-api](/web/public/logo.png)
@@ -9,7 +11,7 @@
 <p align="center">
   <a href="./README.zh_CN.md">简体中文</a> |
   <a href="./README.zh_TW.md">繁體中文</a> |
-  <a href="./README.md">English</a> |
+  <a href="./README.upstream.md">English</a> |
   <a href="./README.fr.md">Français</a> |
   <strong>日本語</strong>
 </p>

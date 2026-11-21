@@ -87,7 +87,7 @@ PORT=8080 ./install.sh  # 换端口
 
 ## 构建与运行
 
-和上游一致，见 [README.md](./README.md)。`make build-web`（需要 bun）生成 `web/dist` 之后再 `go build`；只想编译后端时，放一个占位的 `web/dist/index.html` 即可。
+从源码构建：`make build-web`（需要 bun）生成 `web/dist` 之后再 `go build`；只想编译后端时，放一个占位的 `web/dist/index.html` 即可。上游的构建说明见 [README.upstream.md](./README.upstream.md)。
 
 新增的 admin 路由要登记到 `middleware/access_token_routes.go`，新增的渠道字段要归类到 `controller/channel_authz.go`，否则 `router`、`controller` 里的守卫测试会失败。新增日志列时要想到 ClickHouse 日志库：它的表是 `model/main.go` 里手写的建表语句，不会自动加列。像 `cost_quota` 这样可选的列，要让 `createLog` 在缺列时跳过它，免得一条消费记录因此丢失。
 

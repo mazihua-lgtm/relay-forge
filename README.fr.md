@@ -1,3 +1,5 @@
+> Ceci est le README d’origine de new-api (archivé). La documentation de ce projet se trouve dans [README.md](./README.md).
+
 <div align="center">
 
 ![new-api](/web/public/logo.png)
@@ -9,7 +11,7 @@
 <p align="center">
   <a href="./README.zh_CN.md">简体中文</a> |
   <a href="./README.zh_TW.md">繁體中文</a> |
-  <a href="./README.md">English</a> |
+  <a href="./README.upstream.md">English</a> |
   <strong>Français</strong> |
   <a href="./README.ja.md">日本語</a>
 </p>

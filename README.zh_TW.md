@@ -1,3 +1,5 @@
+> 本文是上游 new-api 的原始說明（歸檔）。本專案說明見 [README.md](./README.md)。
+
 <div align="center">
 
 ![new-api](/web/public/logo.png)
@@ -9,7 +11,7 @@
 <p align="center">
   <a href="./README.zh_CN.md">简体中文</a> |
   <strong>繁體中文</strong> |
-  <a href="./README.md">English</a> |
+  <a href="./README.upstream.md">English</a> |
   <a href="./README.fr.md">Français</a> |
   <a href="./README.ja.md">日本語</a>
 </p>
