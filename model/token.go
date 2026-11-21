@@ -29,10 +29,14 @@ type Token struct {
 	Group              string  `json:"group" gorm:"default:''"`
 	// ClientId ties a key to one downstream customer of a reseller. Nil means
 	// the key belongs to the account holder directly.
-	ClientId        *int           `json:"client_id" gorm:"index"`
-	CrossGroupRetry bool           `json:"cross_group_retry"` // 跨分组重试，仅auto分组有效
-	AutoGroups      string         `json:"-" gorm:"type:text"`
-	DeletedAt       gorm.DeletedAt `gorm:"index"`
+	ClientId *int `json:"client_id" gorm:"index"`
+	// DisabledByClient records that this key was switched off because its client
+	// was disabled, so re-enabling the client revives only those keys and leaves
+	// a key the user disabled by hand alone.
+	DisabledByClient bool           `json:"-" gorm:"default:false"`
+	CrossGroupRetry  bool           `json:"cross_group_retry"` // 跨分组重试，仅auto分组有效
+	AutoGroups       string         `json:"-" gorm:"type:text"`
+	DeletedAt        gorm.DeletedAt `gorm:"index"`
 	// 允许用此令牌查询所属用户的额度；新建令牌默认开启，已有令牌升级后保持关闭
 	AllowUserQuotaQuery bool   `json:"allow_user_quota_query"`
 	CacheExpiresAt      int64  `json:"-" gorm:"-"`

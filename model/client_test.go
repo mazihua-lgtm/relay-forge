@@ -235,3 +235,43 @@ func TestClientListPaginatesAndFiltersByKeyword(t *testing.T) {
 	assert.EqualValues(t, 2, total)
 	assert.Len(t, filtered, 2)
 }
+
+// A disabled client must actually stop serving: the relay never looks at the
+// client, so its keys have to be switched off. Re-enabling revives only the keys
+// this cascade switched off, not ones the user disabled by hand.
+func TestClientStatusCascadesToItsKeys(t *testing.T) {
+	previousRedis := common.RedisEnabled
+	common.RedisEnabled = false
+	t.Cleanup(func() { common.RedisEnabled = previousRedis })
+
+	db := openClientTestDB(t, "sqlite")
+
+	client := Client{UserId: 1, Name: "Acme", BudgetQuota: 10000}
+	require.NoError(t, CreateClient(&client))
+
+	clientId := client.Id
+	live := Token{UserId: 1, Key: "live", ClientId: &clientId, Status: common.TokenStatusEnabled}
+	manual := Token{UserId: 1, Key: "manual", ClientId: &clientId, Status: common.TokenStatusDisabled}
+	require.NoError(t, db.Create(&live).Error)
+	require.NoError(t, db.Create(&manual).Error)
+
+	disabled := ClientStatusDisabled
+	require.NoError(t, UpdateClient(1, client.Id, nil, nil, &disabled, nil))
+
+	var got Token
+	require.NoError(t, db.First(&got, live.Id).Error)
+	assert.Equal(t, common.TokenStatusDisabled, got.Status)
+	assert.True(t, got.DisabledByClient)
+
+	enabled := ClientStatusEnabled
+	require.NoError(t, UpdateClient(1, client.Id, nil, nil, &enabled, nil))
+
+	require.NoError(t, db.First(&got, live.Id).Error)
+	assert.Equal(t, common.TokenStatusEnabled, got.Status)
+	assert.False(t, got.DisabledByClient)
+
+	var manualGot Token
+	require.NoError(t, db.First(&manualGot, manual.Id).Error)
+	assert.Equal(t, common.TokenStatusDisabled, manualGot.Status, "a hand-disabled key stays off")
+	assert.False(t, manualGot.DisabledByClient)
+}

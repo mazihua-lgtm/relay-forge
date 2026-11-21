@@ -198,6 +198,46 @@ func UpdateClient(userId int, id int, name *string, budget *int, status *int, re
 	if result.RowsAffected == 0 {
 		return errors.New("client not found")
 	}
+
+	if status != nil {
+		if err := applyClientStatusToKeys(id, *status); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// applyClientStatusToKeys makes a client's suspension effective on the relay
+// path: the distributor never looks at the client, so a disabled client must
+// actually switch its keys off. Keys the user disabled by hand are left alone —
+// only the ones this function switched off are revived.
+func applyClientStatusToKeys(clientId int, status int) error {
+	where := "client_id = ? AND status = ?"
+	args := []any{clientId, common.TokenStatusEnabled}
+	updates := map[string]any{"status": common.TokenStatusDisabled, "disabled_by_client": true}
+	if status != ClientStatusDisabled {
+		where = "client_id = ? AND disabled_by_client = ?"
+		args = []any{clientId, true}
+		updates = map[string]any{"status": common.TokenStatusEnabled, "disabled_by_client": false}
+	}
+
+	// The relay accepts a key from cache, so the cached copy has to go with the
+	// row; otherwise a suspended key keeps working until its cache entry expires.
+	var keys []string
+	if err := DB.Model(&Token{}).Where(where, args...).Pluck("key", &keys).Error; err != nil {
+		return err
+	}
+	if len(keys) == 0 {
+		return nil
+	}
+	if err := DB.Model(&Token{}).Where(where, args...).Updates(updates).Error; err != nil {
+		return err
+	}
+	for _, key := range keys {
+		if err := invalidateTokenCacheForMutation(key); err != nil {
+			common.SysLog(common.LogText("failed to invalidate token cache after a client status change: %s", err.Error()))
+		}
+	}
 	return nil
 }
 
