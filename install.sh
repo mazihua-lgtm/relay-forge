@@ -47,14 +47,20 @@ fi
 mkdir -p data logs
 
 say "拉起服务（首次会拉取镜像，可能需要几分钟）"
+image="${RELAY_FORGE_IMAGE:-ghcr.io/mazihua-lgtm/relay-forge:latest}"
 if ! docker compose pull --quiet relay-forge 2>/dev/null; then
-  image="${RELAY_FORGE_IMAGE:-ghcr.io/mazihua-lgtm/relay-forge:latest}"
-  say ""
-  say "拉取镜像失败。如果这个镜像还没发布过，先在本机构建："
-  say "  docker build -t ${image} ."
-  say "然后用同样的命令再跑一次 ./install.sh"
-  say ""
-  die "镜像 ${image} 不可用"
+  # A locally built image is a legitimate source: air-gapped installs and the
+  # first run before any release exists both land here.
+  if docker image inspect "$image" >/dev/null 2>&1; then
+    say "拉取失败，但本地已有 ${image}，直接用本地镜像启动"
+  else
+    say ""
+    say "拉取镜像失败，本地也没有这个镜像。先在本机构建："
+    say "  docker build -t ${image} ."
+    say "然后用同样的命令再跑一次 ./install.sh"
+    say ""
+    die "镜像 ${image} 不可用"
+  fi
 fi
 docker compose up -d
 
