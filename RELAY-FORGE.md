@@ -1,6 +1,6 @@
 # relay-forge
 
-基于 [new-api](https://github.com/QuantumNous/new-api)（AGPL-3.0）的分支，面向做 LLM API 中转站的站长。
+基于 [new-api](https://github.com/QuantumNous/new-api)（AGPL-3.0）、独立维护的项目，面向做 LLM API 中转站的站长。
 上游的鉴权、渠道调度、计费和原子扣费逻辑都保留，这里只**增加**三块上游没有的能力（分销抽成是在扣费成功之后追加一次调用，不改变扣费本身）。
 
 > 状态：MVP。三块都有管理后台页面（见各节的「后台入口」），API 也可以单独调用。

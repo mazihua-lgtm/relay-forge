@@ -1,4 +1,4 @@
-> **relay-forge** 是 new-api 的分支，面向做 LLM API 中转站的站长，新增了收益看板、渠道健康巡检和分销持续抽成。改了什么、有哪些限制见 [RELAY-FORGE.md](./RELAY-FORGE.md)。下面是上游 new-api 的原始说明。
+> **relay-forge** 是一个独立维护的项目，基于 [new-api](https://github.com/QuantumNous/new-api)（AGPL-3.0），面向做 LLM API 中转站的站长，新增了收益看板、渠道健康巡检和分销持续抽成。改了什么、有哪些限制见 [RELAY-FORGE.md](./RELAY-FORGE.md)。下面是 new-api 的原始说明，版权与出处依上游许可保留。
 
 <div align="center">
 
