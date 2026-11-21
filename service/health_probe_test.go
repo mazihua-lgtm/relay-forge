@@ -447,3 +447,62 @@ func TestProbeChannelAccountNeverReportsTheKey(t *testing.T) {
 	assert.Contains(t, outcome.detail, "***")
 	assert.NotContains(t, healthProbeReason(outcome.verdict, "gpt-4o-mini", outcome.detail), apiKey)
 }
+
+// A single empty answer must not take a channel out of rotation: the probe asks
+// again, and a healthy second answer wins.
+func TestProbeChannelAccountRetriesADegradedAnswerOnce(t *testing.T) {
+	t.Parallel()
+
+	var calls int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.Header().Set("Content-Type", "application/json")
+		if calls == 1 {
+			_, _ = w.Write([]byte(`{"choices":[{"message":{"content":""}}]}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"Hello!"}}]}`))
+	}))
+	t.Cleanup(server.Close)
+
+	outcome := probeChannelAccount(healthProbeTestContext(t, 5*time.Second), server.Client(), server.URL,
+		healthProbeProtocolOpenAI, "sk-test", "gpt-4o-mini")
+
+	assert.Equal(t, healthProbeVerdictHealthy, outcome.verdict, outcome.detail)
+	assert.Equal(t, 2, calls, "the probe asks once more before judging")
+}
+
+// Two degraded answers in a row still count as degraded.
+func TestProbeChannelAccountKeepsDegradedAfterTwoEmptyAnswers(t *testing.T) {
+	t.Parallel()
+
+	var calls int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":""}}]}`))
+	}))
+	t.Cleanup(server.Close)
+
+	outcome := probeChannelAccount(healthProbeTestContext(t, 5*time.Second), server.Client(), server.URL,
+		healthProbeProtocolOpenAI, "sk-test", "gpt-4o-mini")
+
+	assert.Equal(t, healthProbeVerdictDegraded, outcome.verdict)
+	assert.Equal(t, 2, calls)
+}
+
+// Reasoning models spend the tiny probe budget on thinking and answer with an
+// empty message, so they must never be chosen as the probe model.
+func TestHealthProbeSkipsReasoningModels(t *testing.T) {
+	t.Parallel()
+
+	for _, name := range []string{
+		"deepseek-r1", "qwq-32b", "o1-mini", "o3", "o4-mini", "o5-preview",
+		"claude-3-7-thinking", "gemini-2.5-pro-reasoning", "gpt-5-reasoner",
+	} {
+		assert.True(t, healthProbeIsNonChatModel(name), "%s must not be used for probing", name)
+	}
+	for _, name := range []string{"gpt-4o-mini", "claude-haiku-4-5", "gemini-2.5-flash"} {
+		assert.False(t, healthProbeIsNonChatModel(name), "%s is a normal chat model", name)
+	}
+}

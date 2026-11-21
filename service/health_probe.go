@@ -153,7 +153,7 @@ var healthProbeNonChatMarkers = []string{
 	"embed", "rerank", "whisper", "tts", "moderation", "dall-e", "image",
 	"sora", "video", "kling", "jimeng", "vidu", "suno", "midjourney",
 	"audio", "realtime", "transcribe", "speech", "bge-", "m3e",
-	"reasoner", "codex",
+	"reasoner", "codex", "qwq", "deepseek-r", "thinking", "reasoning",
 }
 
 // StartHealthProber starts the periodic channel health probe. Call it once
@@ -569,6 +569,17 @@ func healthProbeRestoreChannelKey(channelId int, channelName string, keyIndex in
 // reaches the returned detail, which is logged and stored with the channel.
 func probeChannelAccount(ctx context.Context, client *http.Client, baseURL string, protocol healthProbeProtocol, apiKey string, probeModel string) healthProbeOutcome {
 	outcome := doProbeChannelAccount(ctx, client, baseURL, protocol, apiKey, probeModel)
+	// One empty answer is not proof of a degraded channel: a slow model, a
+	// reasoning model that spends the tiny token budget thinking, or a transient
+	// upstream hiccup all produce it. Confirm with a second probe before the
+	// sweep is allowed to take the channel out of rotation.
+	if outcome.verdict == healthProbeVerdictDegraded {
+		if retry := doProbeChannelAccount(ctx, client, baseURL, protocol, apiKey, probeModel); retry.verdict != healthProbeVerdictDegraded {
+			return retry
+		} else {
+			outcome = retry
+		}
+	}
 	if apiKey != "" {
 		outcome.detail = strings.ReplaceAll(outcome.detail, apiKey, "***")
 	}
@@ -737,7 +748,7 @@ func healthProbeIsNonChatModel(name string) bool {
 			return true
 		}
 	}
-	for _, prefix := range []string{"o1", "o3", "o4"} {
+	for _, prefix := range []string{"o1", "o3", "o4", "o5"} {
 		if strings.HasPrefix(lower, prefix) {
 			return true
 		}
