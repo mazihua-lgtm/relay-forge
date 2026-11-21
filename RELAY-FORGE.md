@@ -70,6 +70,21 @@
 
 新增的页面和输入框在 `web/src/features/earnings/`、渠道编辑抽屉、用户编辑抽屉里，新增文案已补齐 7 种界面语言。校验：`bun check -b`（类型）、`bun run lint`、`bun run format:check`、`bunx vitest run`、`bun run build`。其中 lint、`format:check`、`copyright:check` 在上游源码里本来就有存量失败项，这里的改动没有新增。
 
+## 部署
+
+一条命令起站：
+
+```
+./install.sh            # 默认 3000 端口
+PORT=8080 ./install.sh  # 换端口
+```
+
+它做三件事：生成 `.env`（Postgres 和 Redis 的随机密码，权限 600）、`docker compose up -d`、轮询 `/api/status` 直到就绪。脚本可以重复运行，已有 `.env` 会被复用——**已经初始化过的数据库不要改密码**，改了服务连不上。
+
+镜像默认拉 `ghcr.io/mazihua-lgtm/relay-forge:latest`，可用 `RELAY_FORGE_IMAGE` 覆盖。发布镜像由 `.github/workflows/docker-build.yml` 打 tag 时构建（amd64 + arm64，推 GHCR 并用 cosign 签名）。
+
+起完打开 `http://localhost:3000`，初始化向导会创建管理员账号。对外部署还要自己配域名和 HTTPS——向导目前不管这两样。
+
 ## 构建与运行
 
 和上游一致，见 [README.md](./README.md)。`make build-web`（需要 bun）生成 `web/dist` 之后再 `go build`；只想编译后端时，放一个占位的 `web/dist/index.html` 即可。
